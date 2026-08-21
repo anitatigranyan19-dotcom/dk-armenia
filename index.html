@@ -131,6 +131,183 @@ body[style*="background-image"] .hero-bg{
       color-mix(in srgb,var(--paper) 78%,transparent)),
     var(--page-bg-image) center/cover;
 }
+
+/* MOBILE / TABLET RESPONSIVE OVERRIDES */
+@media (max-width: 900px){
+  body{overflow-x:hidden}
+  header{
+    min-height:auto;
+    height:auto;
+    padding:14px 16px;
+    flex-wrap:wrap;
+    gap:12px;
+    position:sticky;
+    top:0;
+    z-index:100;
+  }
+  .brand{
+    font-size:15px;
+    line-height:1.05;
+    max-width:150px;
+  }
+  .nav{
+    order:3;
+    width:100%;
+    overflow-x:auto;
+    white-space:nowrap;
+    gap:18px;
+    padding:4px 0 2px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .nav a{font-size:10px}
+  .head{
+    margin-left:auto;
+    gap:7px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .head .btn{
+    min-height:42px;
+    padding:8px 11px;
+    font-size:10px;
+  }
+  .cloud-status{
+    display:none;
+  }
+
+  .hero{
+    min-height:620px;
+    padding:34px 20px 22px;
+  }
+  .hero-title{
+    font-size:clamp(42px,12vw,72px);
+    line-height:.92;
+    max-width:100%;
+  }
+  .hero-actions{flex-wrap:wrap}
+  .hero-bottom{
+    grid-template-columns:repeat(2,1fr);
+    gap:0;
+  }
+  .stat{padding:18px 12px}
+  .stat .big{font-size:34px}
+
+  .section{
+    padding-left:20px;
+    padding-right:20px;
+  }
+  .headrow{
+    align-items:flex-end;
+    gap:10px;
+  }
+  .sectiontitle{font-size:42px}
+
+  .filters{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .filters input,
+  .filters select{
+    width:100%;
+    min-width:0;
+  }
+  .catalog-controls{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .view-switch{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+  }
+  .view-switch button{
+    min-width:0;
+    padding:10px 4px;
+    font-size:9px;
+  }
+
+  .cards{
+    grid-template-columns:1fr !important;
+    gap:14px;
+  }
+  .card{
+    min-width:0;
+    width:100%;
+  }
+  .card-image{
+    aspect-ratio:16/9;
+    min-height:0;
+  }
+  .card-body{padding:18px}
+  .card-title{
+    font-size:30px;
+    line-height:1.02;
+    word-break:normal;
+    overflow-wrap:anywhere;
+  }
+
+  .map-wrap,
+  #map{
+    min-height:420px;
+    height:55vh;
+  }
+
+  .modal{
+    width:calc(100vw - 24px) !important;
+    max-width:none !important;
+    max-height:90vh;
+    overflow:auto;
+    margin:12px;
+  }
+  .modal-grid{
+    grid-template-columns:1fr !important;
+  }
+  .form-grid{
+    grid-template-columns:1fr !important;
+  }
+  .modal input,
+  .modal select,
+  .modal textarea{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  table{
+    display:block;
+    width:100%;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+
+  .pagination{
+    flex-wrap:wrap;
+  }
+}
+
+@media (max-width: 520px){
+  header{padding:11px 12px}
+  .brand{font-size:14px;max-width:105px}
+  .head{gap:5px}
+  .head .btn{
+    padding:7px 8px;
+    font-size:9px;
+  }
+  #settingsBtn{display:none}
+  .hero{min-height:560px;padding:26px 16px 16px}
+  .hero-title{font-size:46px}
+  .hero-actions .btn{width:100%}
+  .hero-bottom{grid-template-columns:1fr 1fr}
+  .section{padding-left:16px;padding-right:16px}
+  .sectiontitle{font-size:34px}
+  .card-title{font-size:27px}
+  .card-meta{font-size:11px}
+  .card-actions{display:grid;grid-template-columns:1fr}
+  .card-actions .btn{width:100%}
+  .map-wrap,#map{height:60vh;min-height:360px}
+}
+
 </style>
 </head>
 <body>
@@ -464,7 +641,7 @@ function fromCloudRow(x){
   };
 }
 async function syncAllToCloud(){
-  if(!cloudReady)return;
+  if(!cloudReady||!adminUser)return;
   try{
     const payload=db.map(toCloudRow);
     const newOnes=payload.filter(x=>!x.id);
@@ -499,7 +676,7 @@ function showCloudStatus(text){
   let el=document.getElementById("cloudStatus");
   if(!el)return;
   el.textContent=text;
-  el.className="cloud-status "+(text==="CLOUD SAVED"?"ok":"error");
+  el.className="cloud-status "+(text.startsWith("CLOUD SAVED")||text.startsWith("CLOUD ·")?"ok":"error");
 }
 async function loadCloud(){
   showCloudStatus("CONNECTING…");
@@ -549,7 +726,7 @@ async function loadCloudSettings(){
   if(map)map.setZoom(settings.zoom);
 }
 async function saveCloudSettings(){
-  if(!cloudReady)return;
+  if(!cloudReady||!adminUser)return;
   const rows=[
     {key:"interface",value:{
       theme:settings.theme,accent:settings.accent,title:settings.title,logo:settings.logo,
@@ -568,7 +745,7 @@ async function saveCloudSettings(){
   if(error){console.error(error);showCloudStatus("CLOUD ERROR");}
 }
 async function deleteBuildingFromCloud(id){
-  if(!cloudReady||!id)return;
+  if(!cloudReady||!adminUser||!id)return;
   const {error}=await supabaseClient.from("buildings").delete().eq("id",id);
   if(error){console.error(error);showCloudStatus("CLOUD ERROR");}
   else cloudKnownIds.delete(Number(id));
@@ -787,7 +964,7 @@ document.getElementById("adminLoginSubmit").onclick=async()=>{
   msg.textContent="SIGNING IN…";
   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
   if(error){msg.textContent=error.message;return;}
-  adminUser=data.user; setAdminUI(); close("adminOverlay");
+  adminUser=data.user; setAdminUI(); showCloudStatus("ADMIN · CLOUD READY"); close("adminOverlay");
 };
 initAdminAuth();
 loadWorkspace();
