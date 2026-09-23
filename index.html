@@ -1419,36 +1419,48 @@ function fromCloudRow(x){
     extra_data:x.extra_data||{},usage:(x.extra_data&&x.extra_data.usage)||x.usage||"",...(x.extra_data||{})
   };
 }
-async function syncAllToCloud(){
-  if(!cloudReady||!adminUser)return;
+async function syncBuildingToCloud(building){
+  if(!cloudReady) return {ok:false,reason:"cloud_offline"};
+  if(!adminUser) return {ok:false,reason:"admin_required"};
   try{
-    const payload=db.map(toCloudRow);
-    const newOnes=payload.filter(x=>!x.id);
-    if(newOnes.length){
-      const {data,error}=await supabaseClient.from("buildings").insert(newOnes).select();
+    const row=toCloudRow(building);
+    if(row.id){
+      // Update only the passport that was edited. Do not resend all 96 objects.
+      const {data,error}=await supabaseClient.from("buildings").update(row).eq("id",row.id).select().single();
       if(error)throw error;
-      // Match returned generated ids to the newly-created local rows by order.
-      const pending=db.filter(x=>!Number.isInteger(Number(x.id))||Number(x.id)<=0);
-      (data||[]).forEach((row,i)=>{
-        if(pending[i]) pending[i].id=row.id;
-      });
+      if(!data)throw new Error("The edited passport was not found in the cloud.");
+    }else{
+      // New object: insert one passport and take the generated id.
+      delete row.id;
+      const {data,error}=await supabaseClient.from("buildings").insert(row).select().single();
+      if(error)throw error;
+      if(data&&data.id!=null) building.id=data.id;
     }
-    const withIds=db.filter(x=>x.id).map(toCloudRow);
-    if(withIds.length){
-      const {error}=await supabaseClient.from("buildings").upsert(withIds,{onConflict:"id"});
-      if(error)throw error;
-    }
-    const currentIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
-    const missing=[...cloudKnownIds].filter(id=>!currentIds.has(Number(id)));
-    if(missing.length){
-      const {error}=await supabaseClient.from("buildings").delete().in("id",missing);
-      if(error)throw error;
+    cloudKnownIds.add(Number(building.id));
+    showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
+    return {ok:true};
+  }catch(err){
+    console.error("Supabase passport save error",err);
+    showCloudStatus("CLOUD ERROR");
+    return {ok:false,reason:"cloud_error",error:err};
+  }
+}
+async function syncAllToCloud(){
+  if(!cloudReady||!adminUser)return {ok:false,reason:!cloudReady?"cloud_offline":"admin_required"};
+  try{
+    // Full sync remains available for maintenance/imports, but passport editing
+    // uses syncBuildingToCloud() so one edit never uploads the entire archive.
+    for(const building of db){
+      const result=await syncBuildingToCloud(building);
+      if(!result.ok)throw result.error||new Error(result.reason||"Cloud sync failed");
     }
     cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
+    return {ok:true};
   }catch(err){
-    console.error("Supabase sync error",err);
+    console.error("Supabase full sync error",err);
     showCloudStatus("CLOUD ERROR");
+    return {ok:false,reason:"cloud_error",error:err};
   }
 }
 function showCloudStatus(text){
@@ -1656,8 +1668,19 @@ async function saveEdit(){
   try{
     // Save locally first so changes are never lost if cloud sync is slow.
     localStorage.setItem("dk_archive_v9",JSON.stringify(db));
+    localStorage.setItem("dk_passport_backup_v2",JSON.stringify(db));
     render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
-    if(cloudReady) await syncAllToCloud();
+
+    // The passport is already updated in the live UI/local backup.
+    // Then persist only this edited object to Supabase.
+    const cloudResult=await syncBuildingToCloud(db[savedIndex]);
+    if(!cloudResult.ok){
+      if(cloudResult.reason==="admin_required"){
+        throw new Error("ADMIN LOGIN REQUIRED");
+      }
+      throw cloudResult.error||new Error("CLOUD SAVE FAILED");
+    }
+
     close("editorOverlay");
     if(wasObject)details(savedIndex);
   }catch(err){
