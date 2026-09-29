@@ -1284,11 +1284,16 @@ Interior conservation"></textarea></div>
     }
   }
   async function handleRecovery(){
-    if(!window.supabaseClient) return;
+    if(typeof supabaseClient==="undefined" || !supabaseClient) return;
     const hash=window.location.hash||"";
     const query=new URLSearchParams(window.location.search);
     if(!hash.includes("type=recovery") && query.get("type")!=="recovery") return;
     setTimeout(async()=>{
+      const {data:sessionData}=await supabaseClient.auth.getSession();
+      if(!sessionData?.session){
+        alert("RECOVERY LINK COULD NOT BE ACTIVATED. PLEASE REQUEST A NEW RESET EMAIL.");
+        return;
+      }
       const password=prompt("NEW ADMIN PASSWORD:");
       if(password===null)return;
       if(password.length<6){alert("PASSWORD MUST BE AT LEAST 6 CHARACTERS.");return;}
