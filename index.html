@@ -178,7 +178,7 @@ body[style*="background-image"] .hero-bg{
 
 /* MOBILE / TABLET RESPONSIVE OVERRIDES */
 @media (max-width: 900px){
-  body{overflow-x:hidden}
+  html,body{overflow-x:hidden}html.object-scroll-lock,body.object-scroll-lock{overflow:hidden!important}body:not(.object-scroll-lock){overflow-y:auto!important}
   header{
     min-height:auto;
     height:auto;
@@ -1484,7 +1484,7 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const sc=s=>({visited:"#19724a",not_visited:"#777",planned:"#a86d00",researched:"#6045a0"}[s]||"#777");
 const sl=s=>({visited:"● VISITED",not_visited:"○ NOT VISITED",planned:"◐ PLANNED",researched:"◆ RESEARCHED"}[s]||"○ NOT VISITED");
 
-function applySiteContent(){
+function ensurePageScroll(){const o=document.getElementById("objectOverlay");if(!o||getComputedStyle(o).display==="none"){document.documentElement.classList.remove("object-scroll-lock");document.body.classList.remove("object-scroll-lock");document.documentElement.style.overflow="";document.body.style.overflow="";}}\nsetInterval(ensurePageScroll,1000);\n\nfunction applySiteContent(){
  const ct=settings.content||{}; const nav=Array.isArray(ct.nav)?ct.nav:[];
  [...document.querySelectorAll("header nav a")].forEach((a,i)=>{if(nav[i])a.textContent=nav[i]});
  const setText=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.textContent=v};
@@ -1998,8 +1998,11 @@ function details(i){
     img.onclick=()=>openPhoto(img.src);
   });
 
-  document.getElementById("objectOverlay").style.display="block";document.body.style.overflow="hidden";
-  const back=()=>{document.getElementById("objectOverlay").style.display="none";document.body.style.overflow=""};
+  document.getElementById("objectOverlay").style.display="block";
+  const lockPageScroll=()=>{document.documentElement.classList.add("object-scroll-lock");document.body.classList.add("object-scroll-lock");};
+  const unlockPageScroll=()=>{document.documentElement.classList.remove("object-scroll-lock");document.body.classList.remove("object-scroll-lock");document.body.style.overflow="";document.documentElement.style.overflow="";};
+  lockPageScroll();
+  const back=()=>{document.getElementById("objectOverlay").style.display="none";unlockPageScroll();};
   document.getElementById("objectClose").onclick=back;document.getElementById("objectEdit").onclick=()=>editor(i);
   if(x.maps)document.getElementById("objectMaps").onclick=()=>window.open(x.maps,"_blank");
   document.getElementById("objectOverlay").scrollTop=0;
