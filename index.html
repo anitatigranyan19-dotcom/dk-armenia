@@ -1606,7 +1606,7 @@ async function loadCloudPhotos(rows){
   (data||[]).forEach(p=>{const id=Number(p.building_id);if(!byId.has(id))byId.set(id,[]);byId.get(id).push({url:p.file_url,category:(p.category||"EXTERIOR").toUpperCase(),caption:p.caption||""});});
   return rows.map(x=>{const items=byId.get(Number(x.id))||[];return items.length?{...x,photos:items.map(p=>p.url),photo_categories:items.map(p=>p.category),photo_items:items}:x;});
 }
-async function syncBuildingToCloud(building){
+async function syncBuildingToCloud(building,includePhotos=false){
   if(!cloudReady) return {ok:false,reason:"cloud_offline"};
   if(!adminUser) return {ok:false,reason:"admin_required"};
   try{
@@ -1623,8 +1623,10 @@ async function syncBuildingToCloud(building){
       if(error)throw error;
       if(data&&data.id!=null) building.id=data.id;
     }
-    const photoResult=await syncBuildingPhotos(building);
-    if(!photoResult.ok)throw photoResult.error||new Error("PHOTO ARCHIVE SAVE FAILED");
+    if(includePhotos){
+      const photoResult=await syncBuildingPhotos(building);
+      if(!photoResult.ok)throw photoResult.error||new Error("PHOTO ARCHIVE SAVE FAILED");
+    }
     cloudKnownIds.add(Number(building.id));
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
     return {ok:true};
@@ -1872,7 +1874,7 @@ async function saveEdit(){
 
     // The passport is already updated in the live UI/local backup.
     // Then persist only this edited object to Supabase.
-    const cloudResult=await syncBuildingToCloud(db[savedIndex]);
+    const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
     if(!cloudResult.ok){
       if(cloudResult.reason==="admin_required"){
         throw new Error("ADMIN LOGIN REQUIRED");
