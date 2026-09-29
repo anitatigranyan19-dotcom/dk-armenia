@@ -573,7 +573,8 @@ body[style*="background-image"] .hero-bg{
   .admin-history-row{grid-template-columns:1fr auto;gap:5px}
   .admin-history-row .history-object{grid-column:1/-1}
 }
-\n/* ===== EDITORIAL ABOUT / FINAL DESIGN ===== */
+
+/* ===== EDITORIAL ABOUT / FINAL DESIGN ===== */
 .about-editorial{padding:34px 28px 0;background:var(--paper);border-bottom:1px solid var(--line);color:var(--ink)}
 .about-topbar{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:14px;font-size:10px;letter-spacing:.16em;color:var(--muted)}
 .about-edit-btn{border:1px solid var(--ink);background:transparent;padding:8px 12px;font-size:10px;letter-spacing:.12em;cursor:pointer}.about-edit-btn:hover{background:var(--ink);color:#fff}
@@ -1484,7 +1485,10 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const sc=s=>({visited:"#19724a",not_visited:"#777",planned:"#a86d00",researched:"#6045a0"}[s]||"#777");
 const sl=s=>({visited:"● VISITED",not_visited:"○ NOT VISITED",planned:"◐ PLANNED",researched:"◆ RESEARCHED"}[s]||"○ NOT VISITED");
 
-function ensurePageScroll(){const o=document.getElementById("objectOverlay");if(!o||getComputedStyle(o).display==="none"){document.documentElement.classList.remove("object-scroll-lock");document.body.classList.remove("object-scroll-lock");document.documentElement.style.overflow="";document.body.style.overflow="";}}\nsetInterval(ensurePageScroll,1000);\n\nfunction applySiteContent(){
+function ensurePageScroll(){const o=document.getElementById("objectOverlay");if(!o||getComputedStyle(o).display==="none"){document.documentElement.classList.remove("object-scroll-lock");document.body.classList.remove("object-scroll-lock");document.documentElement.style.overflow="";document.body.style.overflow="";}}
+setInterval(ensurePageScroll,1000);
+
+function applySiteContent(){
  const ct=settings.content||{}; const nav=Array.isArray(ct.nav)?ct.nav:[];
  [...document.querySelectorAll("header nav a")].forEach((a,i)=>{if(nav[i])a.textContent=nav[i]});
  const setText=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.textContent=v};
@@ -1519,7 +1523,8 @@ function applyInterface(){
   root.style.setProperty("--card-height",(settings.cardHeight||260)+"px");
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v??""};
   set("siteLogo",settings.logo||"DK / ARMENIA");
-  set("heroTitle",(settings.title||"CULTURAL HOUSES OF ARMENIA").replace(/\\n/g," "));
+  set("heroTitle",(settings.title||"CULTURAL HOUSES OF ARMENIA").replace(/\
+/g," "));
   if(settings.pageBg){
     const safeBg=String(settings.pageBg).replace(/"/g,'&quot;');
     document.body.style.setProperty("--page-bg-image",`url("${safeBg}")`);
@@ -1931,7 +1936,8 @@ function usageLabel(v){return v==="used"?"🟢 USED":v==="partially_used"?"🟡 
 function details(i){
   const x=db[i]||{}; window.objectCurrentIndex=i;
   const photos=(x.photos&&x.photos.length?x.photos:(x._photo?[x._photo]:[])).filter(Boolean);
-  const val=v=>v?esc(String(v)):"—"; const text=v=>v?esc(String(v)).replace(/\n/g,"<br>"):"";
+  const val=v=>v?esc(String(v)):"—"; const text=v=>v?esc(String(v)).replace(/
+/g,"<br>"):"";
   const fallback=(x.condition||"").toLowerCase().includes("excellent")?90:(x.condition||"").toLowerCase().includes("good")?75:(x.condition||"").toLowerCase().includes("poor")?30:55;
   const score=(k,delta=0)=>{let n=Number(x[k]);return Number.isFinite(n)&&x[k]!==""?Math.max(0,Math.min(100,n)):Math.max(0,Math.min(100,fallback+delta));};
   const title=esc(x.name||"UNTITLED OBJECT"), region=val(x.region), settlement=val(x.settlement);
@@ -1939,9 +1945,11 @@ function details(i){
   const thumbs=Array.from({length:6},(_,n)=>photos[n]?`<img src="${photos[n]}" alt="Photo ${n+1}">`:`<div class="ph">IMAGE / NOT ADDED</div>`).join("");
   const rows=[["NAME",x.name],["SETTLEMENT",x.settlement],["COMMUNITY",x.community],["MARZ / REGION",x.region],["ADDRESS",x.address],["COORDINATES",x.lat&&x.lng?`${x.lat}, ${x.lng}`:""],["CONSTRUCTION YEAR",x.year],["ARCHITECT",x.architect],["ORIGINAL FUNCTION",x.original_function||x.owner||"House of Culture"],["CURRENT FUNCTION",x.current_use],["USAGE / ИСПОЛЬЗОВАНИЕ",usageLabel(x.usage)],["OWNERSHIP",x.ownership],["STATUS",x.condition],["ARCHITECTURAL STYLE",x.architect_style],["PROTECTION STATUS",x.heritage]];
   const passport=rows.map(([k,v])=>`<div class="passport-row"><div class="k">${k}</div><div class="v">${k==="STATUS"&&v?`<span class="status-chip">${val(v)}</span>`:val(v)}</div></div>`).join("");
-  const history=(x.history||"").split(/\n+/).filter(Boolean).map(line=>{let parts=line.split("|");return `<div class="event"><b>${val((parts.shift()||"EVENT").trim())}</b><span>${val(parts.join("|").trim()||"No description added.")}</span></div>`}).join("")||`<div class="event"><b>${val(x.year||"DATE")}</b><span>History has not been added yet. Edit this passport to add timeline events.</span></div>`;
+  const history=(x.history||"").split(/
++/).filter(Boolean).map(line=>{let parts=line.split("|");return `<div class="event"><b>${val((parts.shift()||"EVENT").trim())}</b><span>${val(parts.join("|").trim()||"No description added.")}</span></div>`}).join("")||`<div class="event"><b>${val(x.year||"DATE")}</b><span>History has not been added yet. Edit this passport to add timeline events.</span></div>`;
   const arch=[["Style",x.architect_style],["Composition",x.composition],["Materials",x.materials],["Structure",x.structure],["Facade features",x.facade_features],["Changes",x.changes]].map(([k,v])=>`<div>${k}</div><div>${val(v)}</div>`).join("");
-  const sources=(x.sources||x.source||"").split(/\n+/).filter(Boolean).map((v,n)=>`<div class="source-item"><b>SOURCE ${String(n+1).padStart(2,"0")}</b><span>${val(v)}</span></div>`).join("")||`<div class="empty-block">SOURCES / NOT ADDED</div>`;
+  const sources=(x.sources||x.source||"").split(/
++/).filter(Boolean).map((v,n)=>`<div class="source-item"><b>SOURCE ${String(n+1).padStart(2,"0")}</b><span>${val(v)}</span></div>`).join("")||`<div class="empty-block">SOURCES / NOT ADDED</div>`;
   const fieldwork=text(x.fieldwork||x.notes)||`<div class="empty-block">FIELDWORK OBSERVATIONS / NOT ADDED</div>`;
   const discoveries=text(x.discoveries)||`<div class="empty-block">DISCOVERIES / NOT ADDED</div>`;
   const proposal=text(x.proposal)||`<div class="empty-block">PROJECT PROPOSAL / NOT ADDED</div>`;
@@ -2244,8 +2252,13 @@ function adminReviewQuality(label){
   const predicate=checks[label]; if(!predicate)return;
   const missing=db.filter(predicate);
   if(!missing.length){alert("NO OBJECTS NEED REVIEW.");return;}
-  const names=missing.slice(0,20).map((x,i)=>String(i+1).padStart(2,"0")+"  "+(x.name||"UNTITLED")+" — "+(x.settlement||"")).join("\n");
-  alert(label.toUpperCase()+"\\n\\n"+names+(missing.length>20?"\\n\\n+ "+(missing.length-20)+" MORE":""));
+  const names=missing.slice(0,20).map((x,i)=>String(i+1).padStart(2,"0")+"  "+(x.name||"UNTITLED")+" — "+(x.settlement||"")).join("
+");
+  alert(label.toUpperCase()+"\
+\
+"+names+(missing.length>20?"\
+\
++ "+(missing.length-20)+" MORE":""));
 }
 async function loadAdminHistory(){
   const box=document.getElementById("adminHistoryList");
@@ -2373,7 +2386,8 @@ function buildArchiveCSV(){
   const fields=["id","name","settlement","community","region","address","year","architect","condition","status","latitude","longitude","source"];
   const rows=[fields.join(",")];
   db.forEach(x=>rows.push(fields.map(k=>csvEscape(x[k])).join(",")));
-  return rows.join("\\n");
+  return rows.join("\
+");
 }
 
 document.addEventListener("input",function(e){
@@ -2603,13 +2617,25 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(setupPassportTabs,40
 <script>
 (function(){
 const key='dk_about_editorial_v2';
-const defaults={kicker:'ABOUT THE PROJECT',title:'ABOUT',subtitle:'THE PROJECT BEHIND THE ARCHIVE',intro:'CH / Armenia is a digital archive and research platform dedicated to documenting, preserving and activating the cultural houses of Armenia.',stat_objects:'96',stat_objects_label:'CULTURAL HOUSES',stat_regions:'10',stat_regions_label:'REGIONS',stat_mission:'1',stat_mission_label:'MISSION',stat_possibilities:'∞',stat_possibilities_label:'POSSIBILITIES',project_text:'Many cultural houses in Armenia were built as centers of education, art and community life. Today, many of them are underused, abandoned or at risk of disappearing. This project documents all 96 cultural houses, creating a comprehensive digital archive with architectural information, maps, routes, field research, statistics and restoration support.',author_kicker:'THE RESEARCHER',author_text:"I am Anita Tigranyan, an architect and researcher with a deep interest in architectural heritage, cultural landscapes and the stories of places. This project is my independent research and a personal mission to contribute to the preservation and revival of Armenia's cultural heritage.",contact_text:'If you have information, documents, photos or would like to collaborate, support or share feedback, I would love to hear from you.',quote:'ARCHITECTURE IS THE WITNESS OF OUR HISTORY.\nPRESERVING IT MEANS PRESERVING OUR IDENTITY.',journey:'RESEARCH | Collecting data from field and archival sources.\nDOCUMENTATION | Creating architectural passports and a digital archive.\nFIELDWORK | Visiting sites, taking photos and making observations.\nANALYSIS | Studying condition, use, typology and patterns.\nACTIVATION | Raising awareness and supporting a future for these places.',values:'HERITAGE PRESERVATION\nTRANSPARENCY & DATA\nFIELD RESEARCH\nCOMMUNITY & COLLABORATION\nSUSTAINABLE FUTURE',instagram:'#',email:'',linkedin:'#',heroPhoto:'',photo:''};
+const defaults={kicker:'ABOUT THE PROJECT',title:'ABOUT',subtitle:'THE PROJECT BEHIND THE ARCHIVE',intro:'CH / Armenia is a digital archive and research platform dedicated to documenting, preserving and activating the cultural houses of Armenia.',stat_objects:'96',stat_objects_label:'CULTURAL HOUSES',stat_regions:'10',stat_regions_label:'REGIONS',stat_mission:'1',stat_mission_label:'MISSION',stat_possibilities:'∞',stat_possibilities_label:'POSSIBILITIES',project_text:'Many cultural houses in Armenia were built as centers of education, art and community life. Today, many of them are underused, abandoned or at risk of disappearing. This project documents all 96 cultural houses, creating a comprehensive digital archive with architectural information, maps, routes, field research, statistics and restoration support.',author_kicker:'THE RESEARCHER',author_text:"I am Anita Tigranyan, an architect and researcher with a deep interest in architectural heritage, cultural landscapes and the stories of places. This project is my independent research and a personal mission to contribute to the preservation and revival of Armenia's cultural heritage.",contact_text:'If you have information, documents, photos or would like to collaborate, support or share feedback, I would love to hear from you.',quote:'ARCHITECTURE IS THE WITNESS OF OUR HISTORY.
+PRESERVING IT MEANS PRESERVING OUR IDENTITY.',journey:'RESEARCH | Collecting data from field and archival sources.
+DOCUMENTATION | Creating architectural passports and a digital archive.
+FIELDWORK | Visiting sites, taking photos and making observations.
+ANALYSIS | Studying condition, use, typology and patterns.
+ACTIVATION | Raising awareness and supporting a future for these places.',values:'HERITAGE PRESERVATION
+TRANSPARENCY & DATA
+FIELD RESEARCH
+COMMUNITY & COLLABORATION
+SUSTAINABLE FUTURE',instagram:'#',email:'',linkedin:'#',heroPhoto:'',photo:''};
 let data={...defaults};try{data={...defaults,...JSON.parse(localStorage.getItem(key)||'{}')}}catch(e){}
 const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
 function image(elId,src,placeholder,cls){const el=document.getElementById(elId);if(!el)return;el.innerHTML=src?'<img src="'+src+'" alt="">':'<div class="'+cls+'">'+placeholder+'</div>'}
-function apply(){set('aboutKicker',data.kicker);set('aboutTitle',data.title);set('aboutSubtitle',data.subtitle);set('aboutIntro',data.intro);set('statObjects',data.stat_objects);set('statObjectsLabel',data.stat_objects_label);set('statRegions',data.stat_regions);set('statRegionsLabel',data.stat_regions_label);set('statMission',data.stat_mission);set('statMissionLabel',data.stat_mission_label);set('statPossibilities',data.stat_possibilities);set('statPossibilitiesLabel',data.stat_possibilities_label);set('aboutProjectText',data.project_text);set('aboutAuthorKicker',data.author_kicker);set('aboutAuthorText',data.author_text);set('aboutContactText',data.contact_text);document.getElementById('aboutQuote').innerHTML=String(data.quote).replace(/\n/g,'<br>');image('aboutHeroImage',data.heroPhoto,'PROJECT IMAGE / ADD IN EDIT ABOUT','about-image-placeholder');image('aboutAuthorPhoto',data.photo,'YOUR PHOTO / ADD IN EDIT ABOUT','about-photo-placeholder');
-const j=document.getElementById('aboutJourney');j.innerHTML='';String(data.journey).split('\n').filter(Boolean).forEach((line,i)=>{const [t,...r]=line.split('|');const d=r.join('|').trim();j.innerHTML+='<div class="journey-item"><span>'+(String(i+1).padStart(2,'0'))+'</span><b>'+t.trim()+'</b><i>→</i><p>'+d+'</p></div>'});
-const v=document.getElementById('aboutValues');v.innerHTML='';String(data.values).split('\n').filter(Boolean).forEach((x,i)=>v.innerHTML+='<div><span>'+['⌂','▤','⌁','♧','◜'][i%5]+'</span><b>'+x.trim()+'</b></div>');
+function apply(){set('aboutKicker',data.kicker);set('aboutTitle',data.title);set('aboutSubtitle',data.subtitle);set('aboutIntro',data.intro);set('statObjects',data.stat_objects);set('statObjectsLabel',data.stat_objects_label);set('statRegions',data.stat_regions);set('statRegionsLabel',data.stat_regions_label);set('statMission',data.stat_mission);set('statMissionLabel',data.stat_mission_label);set('statPossibilities',data.stat_possibilities);set('statPossibilitiesLabel',data.stat_possibilities_label);set('aboutProjectText',data.project_text);set('aboutAuthorKicker',data.author_kicker);set('aboutAuthorText',data.author_text);set('aboutContactText',data.contact_text);document.getElementById('aboutQuote').innerHTML=String(data.quote).replace(/
+/g,'<br>');image('aboutHeroImage',data.heroPhoto,'PROJECT IMAGE / ADD IN EDIT ABOUT','about-image-placeholder');image('aboutAuthorPhoto',data.photo,'YOUR PHOTO / ADD IN EDIT ABOUT','about-photo-placeholder');
+const j=document.getElementById('aboutJourney');j.innerHTML='';String(data.journey).split('
+').filter(Boolean).forEach((line,i)=>{const [t,...r]=line.split('|');const d=r.join('|').trim();j.innerHTML+='<div class="journey-item"><span>'+(String(i+1).padStart(2,'0'))+'</span><b>'+t.trim()+'</b><i>→</i><p>'+d+'</p></div>'});
+const v=document.getElementById('aboutValues');v.innerHTML='';String(data.values).split('
+').filter(Boolean).forEach((x,i)=>v.innerHTML+='<div><span>'+['⌂','▤','⌁','♧','◜'][i%5]+'</span><b>'+x.trim()+'</b></div>');
 const ig=document.getElementById('aboutInstagram'),em=document.getElementById('aboutEmail'),li=document.getElementById('aboutLinkedin');ig.href=data.instagram||'#';em.href=data.email?'mailto:'+data.email:'#';li.href=data.linkedin||'#';}
 function open(){Object.keys(defaults).forEach(k=>{const el=document.getElementById('about_'+k);if(el)el.value=data[k]||''});document.getElementById('aboutEditorOverlay').style.display='flex'}
 function close(){document.getElementById('aboutEditorOverlay').style.display='none'}
@@ -2637,7 +2663,8 @@ document.addEventListener('DOMContentLoaded',()=>{apply();document.getElementByI
   function filtered(){const q=($('supportSearch').value||'').trim().toLowerCase();const r=$('supportRegionFilter').value;const st=$('supportStatusFilter').value;return buildings().filter(b=>{const hay=[b.name,b.settlement,b.community,b.region].filter(Boolean).join(' ').toLowerCase();if(q&&!hay.includes(q))return false;if(r&&b.region!==r)return false;if(st==='need'&&!needsRestoration(b))return false;if(st==='campaign'&&String(b.id)!==String(campaign.buildingId))return false;return true;});}
   function renderPicker(){const box=$('supportPicker');const q=($('supportSearch').value||'').trim();const hasFilters=$('supportRegionFilter').value||$('supportStatusFilter').value;const arr=filtered().slice(0,12);if(!q&&!hasFilters){box.classList.remove('open');box.innerHTML='';return;}box.classList.add('open');box.innerHTML=arr.length?arr.map((b,i)=>'<button type="button" class="support-result '+(String(b.id)===String(campaign.buildingId)?'active':'')+'" data-id="'+esc(b.id)+'"><span class="support-result-index">'+String(i+1).padStart(2,'0')+'</span><span><span class="support-result-name">'+esc(nameOf(b))+'</span><span class="support-result-meta">'+esc([b.region,b.settlement||b.community].filter(Boolean).join(' · '))+'</span></span><span class="support-result-status">'+esc(conditionText(b))+'</span></button>').join(''):'<div class="support-result"><span></span><span class="support-result-meta">NO MATCHING CULTURAL HOUSES</span><span></span></div>';box.querySelectorAll('[data-id]').forEach(btn=>btn.onclick=()=>{campaign.buildingId=btn.dataset.id;save();$('supportSearch').value='';$('supportRegionFilter').value='';$('supportStatusFilter').value='';renderAll();});}
   function photosOf(b){let p=[];if(Array.isArray(b?.photos))p.push(...b.photos);if(b?.image)p.push(b.image);if(b?.photo)p.push(b.photo);return [...new Set(p.filter(Boolean))];}
-  function renderObject(){const panel=$('supportObjectPanel'),b=getBuilding();if(!b){panel.className='support-empty';panel.textContent='SELECT A CULTURAL HOUSE TO SUPPORT';$('supportNeeds').innerHTML='Select a cultural house to see restoration priorities.';$('supportGallery').innerHTML='';return;}panel.className='';const photos=photosOf(b);const hero=photos[0]||'';const loc=[b.region,b.settlement||b.community].filter(Boolean).join(' · ');const currentUse=b.current_use||b.usage||'Not added';const needs=String(campaign.needs||'').split('\n').map(x=>x.trim()).filter(Boolean);panel.innerHTML='<div class="support-object-grid"><div class="support-object-photo">'+(hero?'<img src="'+esc(hero)+'" alt="">':'<div class="support-empty">PHOTO / NOT ADDED</div>')+'</div><div class="support-object-copy"><div class="support-id">SUPPORT PROJECT / '+esc(String(b.id||'OBJECT'))+'</div><h3 class="support-object-name">'+esc(nameOf(b))+'</h3><div class="support-object-alt">'+esc(b.settlement||'')+'</div><div class="support-meta-row"><span>⌖ '+esc(loc||'Armenia')+'</span><span>◫ '+esc(String(b.year||b.year_built||'YEAR NOT ADDED'))+'</span><span>⌂ '+esc(String(b.type||b.typology||'Cultural House'))+'</span></div><div class="support-story">'+esc(campaign.story||fallback.story)+'</div><div class="support-status-grid"><div class="support-status-cell"><div class="support-label">CURRENT CONDITION</div><div class="status-value"><span class="support-dot"></span>'+esc(conditionText(b))+'</div></div><div class="support-status-cell"><div class="support-label">CURRENT USE</div><div class="status-value">'+esc(currentUse)+'</div></div></div><div class="support-stats-row"><div class="support-mini-stat"><div class="support-mini-number">'+esc(String(b.supporters||0))+'</div><div class="support-mini-label">SUPPORTERS</div></div><div class="support-mini-stat"><div class="support-mini-number">'+esc(String(b.months_left||'—'))+'</div><div class="support-mini-label">MONTHS LEFT</div></div><div class="support-mini-stat"><div class="support-mini-number">'+esc(money(campaign.goal))+'</div><div class="support-mini-label">GOAL</div></div><div class="support-mini-stat"><div class="support-mini-number">'+esc(campaign.target||'—')+'</div><div class="support-mini-label">TARGET</div></div></div></div></div>';
+  function renderObject(){const panel=$('supportObjectPanel'),b=getBuilding();if(!b){panel.className='support-empty';panel.textContent='SELECT A CULTURAL HOUSE TO SUPPORT';$('supportNeeds').innerHTML='Select a cultural house to see restoration priorities.';$('supportGallery').innerHTML='';return;}panel.className='';const photos=photosOf(b);const hero=photos[0]||'';const loc=[b.region,b.settlement||b.community].filter(Boolean).join(' · ');const currentUse=b.current_use||b.usage||'Not added';const needs=String(campaign.needs||'').split('
+').map(x=>x.trim()).filter(Boolean);panel.innerHTML='<div class="support-object-grid"><div class="support-object-photo">'+(hero?'<img src="'+esc(hero)+'" alt="">':'<div class="support-empty">PHOTO / NOT ADDED</div>')+'</div><div class="support-object-copy"><div class="support-id">SUPPORT PROJECT / '+esc(String(b.id||'OBJECT'))+'</div><h3 class="support-object-name">'+esc(nameOf(b))+'</h3><div class="support-object-alt">'+esc(b.settlement||'')+'</div><div class="support-meta-row"><span>⌖ '+esc(loc||'Armenia')+'</span><span>◫ '+esc(String(b.year||b.year_built||'YEAR NOT ADDED'))+'</span><span>⌂ '+esc(String(b.type||b.typology||'Cultural House'))+'</span></div><div class="support-story">'+esc(campaign.story||fallback.story)+'</div><div class="support-status-grid"><div class="support-status-cell"><div class="support-label">CURRENT CONDITION</div><div class="status-value"><span class="support-dot"></span>'+esc(conditionText(b))+'</div></div><div class="support-status-cell"><div class="support-label">CURRENT USE</div><div class="status-value">'+esc(currentUse)+'</div></div></div><div class="support-stats-row"><div class="support-mini-stat"><div class="support-mini-number">'+esc(String(b.supporters||0))+'</div><div class="support-mini-label">SUPPORTERS</div></div><div class="support-mini-stat"><div class="support-mini-number">'+esc(String(b.months_left||'—'))+'</div><div class="support-mini-label">MONTHS LEFT</div></div><div class="support-mini-stat"><div class="support-mini-number">'+esc(money(campaign.goal))+'</div><div class="support-mini-label">GOAL</div></div><div class="support-mini-stat"><div class="support-mini-number">'+esc(campaign.target||'—')+'</div><div class="support-mini-label">TARGET</div></div></div></div></div>';
     $('supportNeeds').innerHTML=needs.length?'<ul class="needs-list">'+needs.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>':'<div class="needs-empty">No restoration priorities added yet. Use EDIT SUPPORT to add the project needs.</div>';
     $('supportGallery').innerHTML=photos.slice(1,5).map(src=>'<img src="'+esc(src)+'" alt="">').join('');
   }
@@ -2646,7 +2673,12 @@ document.addEventListener('DOMContentLoaded',()=>{apply();document.getElementByI
   function openEditor(){populateEditor();$('support_edit_building').value=campaign.buildingId||'';$('support_edit_status').value=campaign.status||'NO CAMPAIGN';$('support_edit_goal').value=campaign.goal||0;$('support_edit_raised').value=campaign.raised||0;$('support_edit_target').value=campaign.target||'';$('support_edit_story').value=campaign.story||'';$('support_edit_needs').value=campaign.needs||'';$('support_edit_link').value=campaign.link||'';$('supportEditorOverlay').style.display='flex';}
   function closeEditor(){$('supportEditorOverlay').style.display='none';}
   function donationAmount(){const custom=Number($('supportCustomAmount').value||0);return custom>0?custom:selectedAmount;}
-  document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{renderAll();['supportSearch','supportRegionFilter','supportStatusFilter'].forEach(id=>$(id).addEventListener(id==='supportSearch'?'input':'change',renderPicker));$('editSupportBtn').onclick=openEditor;$('closeSupportEditor').onclick=closeEditor;$('cancelSupportBtn').onclick=closeEditor;document.querySelectorAll('.amount-btn').forEach(btn=>btn.onclick=()=>{selectedAmount=Number(btn.dataset.amount);$('supportCustomAmount').value='';document.querySelectorAll('.amount-btn').forEach(x=>x.classList.toggle('active',x===btn));});$('supportCustomAmount').oninput=()=>document.querySelectorAll('.amount-btn').forEach(x=>x.classList.remove('active'));$('saveSupportBtn').onclick=()=>{campaign={buildingId:$('support_edit_building').value,status:$('support_edit_status').value,goal:Number($('support_edit_goal').value||0),raised:Number($('support_edit_raised').value||0),target:$('support_edit_target').value.trim(),story:$('support_edit_story').value.trim(),needs:$('support_edit_needs').value.trim(),link:$('support_edit_link').value.trim()};save();closeEditor();renderAll();};$('donateBtn').onclick=()=>{if(!campaign.buildingId)return alert('PLEASE SELECT A CULTURAL HOUSE FIRST');if(campaign.link){window.open(campaign.link,'_blank','noopener');return;}alert('DONATION PAGE NOT CONNECTED YET\n\nSelected project: '+nameOf(getBuilding())+'\nSelected amount: '+money(donationAmount())+'\n\nConnect an official organization or payment provider in EDIT SUPPORT before collecting money.');};},180);});
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{renderAll();['supportSearch','supportRegionFilter','supportStatusFilter'].forEach(id=>$(id).addEventListener(id==='supportSearch'?'input':'change',renderPicker));$('editSupportBtn').onclick=openEditor;$('closeSupportEditor').onclick=closeEditor;$('cancelSupportBtn').onclick=closeEditor;document.querySelectorAll('.amount-btn').forEach(btn=>btn.onclick=()=>{selectedAmount=Number(btn.dataset.amount);$('supportCustomAmount').value='';document.querySelectorAll('.amount-btn').forEach(x=>x.classList.toggle('active',x===btn));});$('supportCustomAmount').oninput=()=>document.querySelectorAll('.amount-btn').forEach(x=>x.classList.remove('active'));$('saveSupportBtn').onclick=()=>{campaign={buildingId:$('support_edit_building').value,status:$('support_edit_status').value,goal:Number($('support_edit_goal').value||0),raised:Number($('support_edit_raised').value||0),target:$('support_edit_target').value.trim(),story:$('support_edit_story').value.trim(),needs:$('support_edit_needs').value.trim(),link:$('support_edit_link').value.trim()};save();closeEditor();renderAll();};$('donateBtn').onclick=()=>{if(!campaign.buildingId)return alert('PLEASE SELECT A CULTURAL HOUSE FIRST');if(campaign.link){window.open(campaign.link,'_blank','noopener');return;}alert('DONATION PAGE NOT CONNECTED YET
+
+Selected project: '+nameOf(getBuilding())+'
+Selected amount: '+money(donationAmount())+'
+
+Connect an official organization or payment provider in EDIT SUPPORT before collecting money.');};},180);});
 })();
 </script>
 <script>
