@@ -965,7 +965,33 @@ body[style*="background-image"] .hero-bg{
 @media(max-width:980px){.about-hero-grid{grid-template-columns:1fr 1fr;gap:24px}.about-stat-stack{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.about-editorial-board{grid-template-columns:1fr 1fr}.about-author-photo{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);height:300px}.about-bottom-grid{grid-template-columns:1fr}.about-values-block,.about-contact-block{border-left:0;border-top:1px solid var(--line)}.journey-row{grid-template-columns:repeat(5,1fr)}}
 @media(max-width:700px){.about-editorial{padding:24px 16px 0}.about-hero-grid{grid-template-columns:1fr;padding:24px 0}.about-hero-image{height:240px}.about-stat-stack{grid-column:auto;grid-template-columns:repeat(2,1fr)}.about-editorial-board{grid-template-columns:1fr}.about-researcher-card{border-left:0;border-top:1px solid var(--line)}.about-project-card,.about-researcher-card{padding:24px}.journey-row{grid-template-columns:1fr 1fr}.about-journey-block,.about-values-block,.about-contact-block{padding:24px}.about-quote{grid-template-columns:24px 1fr;padding:18px 22px}.about-line-art{display:none}}
 
-</style>
+<style>
+/* ARCHIVE EDITORIAL SYSTEM v1 */
+:root{--archive-max:1680px}
+body{letter-spacing:.005em}
+header{border-bottom:1px solid var(--line);background:rgba(238,234,226,.96);backdrop-filter:blur(10px)}
+header .brand{font-weight:600;letter-spacing:.08em}
+.nav a{position:relative;transition:opacity .2s ease}
+.nav a:after{content:"";position:absolute;left:0;right:100%;bottom:-7px;height:1px;background:var(--ink);transition:right .2s ease}
+.nav a:hover:after,.nav a.active:after{right:0}
+.btn{transition:background .18s ease,color .18s ease,border-color .18s ease}
+.hero{border-bottom:1px solid var(--line)}
+.hero-title{max-width:980px;letter-spacing:-.045em;line-height:.9}
+.catalog-redesign,.routes-intro-strip,.data-head,.about-topbar{max-width:var(--archive-max);margin-left:auto;margin-right:auto}
+.catalog-topline{border-bottom:1px solid var(--line);padding-bottom:18px}
+.catalog-card{border:1px solid var(--line);background:var(--card);border-radius:0}
+.catalog-card:hover{transform:none;box-shadow:inset 0 0 0 1px var(--ink)!important}
+.data-metric{border-left:1px solid var(--line);border-radius:0}
+.data-metric:last-child{border-right:1px solid var(--line)}
+.support-head-editable{padding:0 0 34px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.support-head-editable h2{font-size:clamp(34px,5vw,72px);line-height:.92;letter-spacing:-.04em;margin:8px 0}
+.support-head-editable p{max-width:620px;color:var(--muted);font-size:14px;line-height:1.6}
+.builder-section{border-top:1px solid var(--line);padding-top:22px;margin-top:24px}
+.site-builder-note{max-width:760px}
+#settingsOverlay .modal{max-width:1180px}
+#settingsOverlay .field input,#settingsOverlay .field select,#settingsOverlay .field textarea{border-radius:0}
+@media(max-width:900px){.hero-title{font-size:clamp(48px,14vw,96px)}}
+</style></style>
 </head>
 <body>
 <header><a class="brand" href="#" id="siteLogo">DK / ARMENIA</a><nav aria-label="Main navigation" class="nav">
@@ -973,7 +999,7 @@ body[style*="background-image"] .hero-bg{
 </nav><div class="head"><span class="cloud-status" id="cloudStatus">CLOUD</span><button class="btn" id="settingsBtn">SETTINGS</button><button class="btn" id="adminBtn">ADMIN LOGIN</button><button class="btn" id="adminPanelBtn" style="display:none">ADMIN PANEL</button><button class="btn" id="backupBtn">BACKUP</button><button class="btn dark" id="addBtn">+ ADD</button></div></header>
 <section class="hero">
 <div class="hero-bg"></div>
-<div class="kicker">DIGITAL ARCHIVE / ARCHITECTURAL ATLAS / ARMENIA</div>
+<div class="kicker" id="heroKicker">DIGITAL ARCHIVE / ARCHITECTURAL ATLAS / ARMENIA</div>
 <div><div class="hero-title" id="heroTitle">CULTURAL HOUSES<br/>OF ARMENIA</div><div class="hero-actions"><button class="btn dark" onclick="document.getElementById('map-section').scrollIntoView({behavior:'smooth'})">EXPLORE MAP  →</button><button class="btn" onclick="document.getElementById('catalog').scrollIntoView({behavior:'smooth'})">BROWSE ARCHIVE  →</button></div></div>
 <div class="hero-bottom"><div class="stat"><div class="big" id="statObjects">0</div><div class="statlabel">Objects</div></div><div class="stat"><div class="big" id="statSettlements">0</div><div class="statlabel">Settlements</div></div><div class="stat"><div class="big" id="statRegions">0</div><div class="statlabel">Regions</div></div><div class="stat"><div class="big" id="statAbandoned">0%</div><div class="statlabel">Abandoned</div></div></div>
 </section>
@@ -1284,7 +1310,7 @@ Interior conservation"></textarea></div>
 <div class="field wide"><label>Custom CSS</label><textarea id="s_customCSS" placeholder="/* Your own CSS overrides */" style="min-height:130px"></textarea><div class="builder-help">Optional. Anything here is applied last, so you can fine-tune the interface yourself.</div></div>
 </div>
 </div>
-<div class="builder-section"><h3>Discoveries</h3>
+<div class="builder-section"><h3>Site content / editable labels</h3><div class="site-builder-note">Change navigation labels, hero text, statistics labels and key page copy without editing code. Archive objects and passports remain untouched.</div><div class="builder-grid"><div class="field wide"><label>Navigation labels — use | between items</label><input id="s_navLabels"/></div><div class="field wide"><label>Hero kicker</label><input id="s_heroKicker"/></div><div class="field"><label>Statistic 1</label><input id="s_stat1"/></div><div class="field"><label>Statistic 2</label><input id="s_stat2"/></div><div class="field"><label>Statistic 3</label><input id="s_stat3"/></div><div class="field"><label>Statistic 4</label><input id="s_stat4"/></div><div class="field"><label>Support title</label><input id="s_supportTitle"/></div><div class="field wide"><label>Support intro</label><textarea id="s_supportIntro"></textarea></div><div class="field"><label>About kicker</label><input id="s_aboutKicker"/></div><div class="field"><label>About title</label><input id="s_aboutTitle"/></div><div class="field"><label>About subtitle</label><input id="s_aboutSubtitle"/></div><div class="field wide"><label>About intro</label><textarea id="s_aboutIntro"></textarea></div></div></div><div class="builder-section"><h3>Discoveries</h3>
 <div class="builder-grid">
 <div class="field"><label>Section title</label><input id="s_discoveryTitle"/></div>
 <div class="field wide"><label>Intro text</label><textarea id="s_discoveryIntro"></textarea></div>
@@ -1429,7 +1455,7 @@ let settings={style:"standard",zoom:8,marker:"status",icon:"pin",view:"grid",the
  bg:"#eeeae2",text:"#171717",muted:"#77736b",line:"#b9b4aa",card:"#f7f5f0",font:"Arial,sans-serif",fontSize:16,
  headerH:74,headerPad:28,navGap:24,navSize:11,navSpacing:".12em",contentPad:28,sectionPad:82,lineW:1,
  btnRadius:0,cardRadius:0,cardGap:1,shadow:"none",heroHeight:"screen",heroOpacity:.55,heroFilter:"grayscale(1)",
- cardHeight:260,columns:3,pageSize:8,pageBg:"",customCSS:"",
+ cardHeight:260,columns:3,pageSize:8,pageBg:"",customCSS:"",content:{nav:["CATALOG","MAP","ROUTES","FIELDWORK","DATA","SUPPORT","ABOUT"],heroKicker:"DIGITAL ARCHIVE / ARCHITECTURAL ATLAS / ARMENIA",statLabels:["OBJECTS","SETTLEMENTS","REGIONS","ABANDONED"],supportTitle:"SUPPORT THE ARCHIVE",supportIntro:"Help document, preserve and activate Armenia’s cultural houses.",aboutKicker:"ABOUT THE PROJECT",aboutTitle:"ABOUT",aboutSubtitle:"THE PROJECT BEHIND THE ARCHIVE",aboutIntro:"CH / Armenia is a digital archive and research platform dedicated to documenting, preserving and activating the cultural houses of Armenia."},
  ...JSON.parse(localStorage.getItem("dk_settings_v9")||"{}")};
 let map,layer,tile,editing=-1,newPhoto=null,newPhotos=[],addingPoint=false,mapStatus="",pendingMapIndex=null;
 let routeIds=JSON.parse(localStorage.getItem("dk_route_v10")||"[]");
@@ -1459,6 +1485,14 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const sc=s=>({visited:"#19724a",not_visited:"#777",planned:"#a86d00",researched:"#6045a0"}[s]||"#777");
 const sl=s=>({visited:"● VISITED",not_visited:"○ NOT VISITED",planned:"◐ PLANNED",researched:"◆ RESEARCHED"}[s]||"○ NOT VISITED");
 
+function applySiteContent(){
+ const ct=settings.content||{}; const nav=Array.isArray(ct.nav)?ct.nav:[];
+ [...document.querySelectorAll("header nav a")].forEach((a,i)=>{if(nav[i])a.textContent=nav[i]});
+ const setText=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.textContent=v};
+ setText("heroKicker",ct.heroKicker); const sl=Array.isArray(ct.statLabels)?ct.statLabels:[];
+ ["statObjects","statSettlements","statRegions","statAbandoned"].forEach((id,i)=>{const e=document.getElementById(id)?.parentElement?.querySelector(".statlabel");if(e&&sl[i])e.textContent=sl[i]});
+ setText("aboutKicker",ct.aboutKicker);setText("aboutTitle",ct.aboutTitle);setText("aboutSubtitle",ct.aboutSubtitle);setText("aboutIntro",ct.aboutIntro);setText("supportTitle",ct.supportTitle);setText("supportIntro",ct.supportIntro);
+}
 function applyInterface(){
   document.body.classList.remove("theme-dark","theme-white");
   if(settings.theme==="dark")document.body.classList.add("theme-dark");
@@ -1497,6 +1531,7 @@ function applyInterface(){
   }
   let old=document.getElementById("customUserCSS");if(old)old.remove();
   if(settings.customCSS){old=document.createElement("style");old.id="customUserCSS";old.textContent=settings.customCSS;document.head.appendChild(old);}
+  applySiteContent();
 }
 function persist(){
   localStorage.setItem("dk_archive_v9",JSON.stringify(db));
@@ -1727,7 +1762,7 @@ async function saveCloudSettings(){
       btnRadius:settings.btnRadius,cardRadius:settings.cardRadius,cardGap:settings.cardGap,
       shadow:settings.shadow,heroHeight:settings.heroHeight,heroOpacity:settings.heroOpacity,
       heroFilter:settings.heroFilter,cardHeight:settings.cardHeight,columns:settings.columns,
-      pageSize:settings.pageSize,pageBg:settings.pageBg,customCSS:settings.customCSS
+      pageSize:settings.pageSize,pageBg:settings.pageBg,customCSS:settings.customCSS,content:settings.content
     }},
     {key:"map",value:{style:settings.style,zoom:settings.zoom,marker:settings.marker,icon:settings.icon,view:settings.view}}
   ];
@@ -2074,10 +2109,10 @@ document.getElementById("viewList").onclick=()=>setCatalogView("list");
 document.getElementById("viewMap").onclick=()=>{document.getElementById("map-section").scrollIntoView({behavior:"smooth"});setTimeout(()=>map.invalidateSize(),500)};
 document.getElementById("settingsBtn").onclick=()=>{
  const ids=["s_theme","s_accent","s_title","s_logo","s_style","s_zoom","s_marker","s_icon","s_view",
- "s_bg","s_text","s_muted","s_line","s_card","s_accent2","s_font2","s_fontSize2","s_headerH","s_headerPad","s_navGap","s_navSize","s_navSpacing",
+ "s_bg","s_text","s_muted","s_line","s_card","s_accent2","s_font2","s_fontSize2","s_headerH","s_headerPad","s_navGap","s_navSize","s_navSpacing","s_navLabels","s_heroKicker","s_stat1","s_stat2","s_stat3","s_stat4","s_supportTitle","s_supportIntro","s_aboutKicker","s_aboutTitle","s_aboutSubtitle","s_aboutIntro",
  "s_contentPad","s_sectionPad","s_lineW","s_btnRadius","s_cardRadius","s_cardGap","s_shadow","s_heroHeight","s_heroOpacity","s_heroFilter","s_cardHeight2","s_columns2","s_pageSize2","s_pageBg","s_customCSS","s_pagesJSON","s_caseIds","s_logJSON","s_articleJSON"];
  const vals={s_theme:settings.theme,s_accent:settings.accent,s_title:settings.title,s_logo:settings.logo,s_style:settings.style,s_zoom:settings.zoom,s_marker:settings.marker,s_icon:settings.icon,s_view:settings.view,
- s_bg:settings.bg,s_text:settings.text,s_muted:settings.muted,s_line:settings.line,s_card:settings.card,s_accent2:settings.accent,s_font2:settings.font,s_fontSize2:settings.fontSize,
+ s_bg:settings.bg,s_text:settings.text,s_muted:settings.muted,s_line:settings.line,s_card:settings.card,s_accent2:settings.accent,s_font2:settings.font,s_fontSize2:settings.fontSize,s_navLabels:(settings.content?.nav||[]).join(" | "),s_heroKicker:settings.content?.heroKicker||"",s_stat1:settings.content?.statLabels?.[0]||"",s_stat2:settings.content?.statLabels?.[1]||"",s_stat3:settings.content?.statLabels?.[2]||"",s_stat4:settings.content?.statLabels?.[3]||"",s_supportTitle:settings.content?.supportTitle||"",s_supportIntro:settings.content?.supportIntro||"",s_aboutKicker:settings.content?.aboutKicker||"",s_aboutTitle:settings.content?.aboutTitle||"",s_aboutSubtitle:settings.content?.aboutSubtitle||"",s_aboutIntro:settings.content?.aboutIntro||"",
  s_headerH:settings.headerH,s_headerPad:settings.headerPad,s_navGap:settings.navGap,s_navSize:settings.navSize,s_navSpacing:settings.navSpacing,s_contentPad:settings.contentPad,s_sectionPad:settings.sectionPad,s_lineW:settings.lineW,
  s_btnRadius:settings.btnRadius,s_cardRadius:settings.cardRadius,s_cardGap:settings.cardGap,s_shadow:settings.shadow,s_heroHeight:settings.heroHeight,s_heroOpacity:settings.heroOpacity,s_heroFilter:settings.heroFilter,
  s_cardHeight2:settings.cardHeight,s_columns2:settings.columns,s_pageSize2:settings.pageSize,s_pageBg:settings.pageBg,s_customCSS:settings.customCSS,s_pagesJSON:JSON.stringify(sitePages,null,2),s_caseIds:caseIds.join(","),s_logJSON:JSON.stringify(researchLog,null,2),s_articleJSON:JSON.stringify(articleBlocks,null,2)};
@@ -2086,6 +2121,8 @@ document.getElementById("settingsBtn").onclick=()=>{
 };
 document.getElementById("saveSettings").onclick=()=>{
  const g=id=>document.getElementById(id)?.value??"";
+ settings.content=settings.content||{}; const nav=g("s_navLabels").split("|").map(x=>x.trim()).filter(Boolean).slice(0,7); if(nav.length===7)settings.content.nav=nav;
+ settings.content.heroKicker=g("s_heroKicker");settings.content.statLabels=[g("s_stat1"),g("s_stat2"),g("s_stat3"),g("s_stat4")];settings.content.supportTitle=g("s_supportTitle");settings.content.supportIntro=g("s_supportIntro");settings.content.aboutKicker=g("s_aboutKicker");settings.content.aboutTitle=g("s_aboutTitle");settings.content.aboutSubtitle=g("s_aboutSubtitle");settings.content.aboutIntro=g("s_aboutIntro");
  try{
    sitePages=JSON.parse(g("s_pagesJSON")||"[]");if(!Array.isArray(sitePages))sitePages=[];
    caseIds=g("s_caseIds").split(",").map(x=>x.trim()).filter(Boolean).slice(0,10);
