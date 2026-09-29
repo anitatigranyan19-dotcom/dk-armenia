@@ -1489,6 +1489,9 @@ setInterval(ensurePageScroll,1000);
 
 function applySiteContent(){
  const ct=settings.content||{}; const nav=Array.isArray(ct.nav)?ct.nav:[];
+ // Safety: never allow a stale/invalid editor state to hide the entire public archive.
+ const coreIds=["catalog","map-section","routes","fieldwork","data","support","about"];
+ if(ct.visible && coreIds.every(id=>ct.visible[id]===false)){ct.visible=Object.fromEntries(coreIds.map(id=>[id,true]));settings.content.visible=ct.visible;localStorage.setItem("dk_settings_v9",JSON.stringify(settings));}
  [...document.querySelectorAll("header nav a")].forEach((a,i)=>{if(nav[i])a.textContent=nav[i]});
  const setText=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.textContent=v};
  setText("heroKicker",ct.heroKicker);setText("heroPrimary",ct.heroPrimary);setText("heroSecondary",ct.heroSecondary);["catalog","map-section","routes","fieldwork","data","support","about"].forEach(id=>{const e=document.getElementById(id);if(e){const hidden=ct.visible&&ct.visible[id]===false;e.style.display=hidden?"none":"";const prev=e.previousElementSibling;if(prev&&prev.classList.contains("section-divider"))prev.style.display=hidden?"none":"";}}); const sl=Array.isArray(ct.statLabels)?ct.statLabels:[];
