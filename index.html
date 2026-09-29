@@ -1268,47 +1268,83 @@ Interior conservation"></textarea></div>
 <div class="overlay" id="adminOverlay"><div class="modal" style="max-width:420px"><button class="close" data-close="adminOverlay">×</button><h2>ADMIN LOGIN</h2><div class="small">Sign in to edit the archive and interface.</div><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input autocomplete="username" id="adminEmail" type="email"/></div><div class="field full"><label>Password</label><input autocomplete="current-password" id="adminPassword" type="password"/></div><div class="field full"><div class="small" id="adminMessage"></div></div></div><div style="margin-top:8px;text-align:left"><button class="btn" id="forgotPasswordBtn" type="button" style="width:100%;text-align:left;border:0;border-top:1px solid var(--line);padding:12px 0;background:transparent;color:var(--muted);letter-spacing:.08em">FORGOT PASSWORD? &nbsp;→</button></div><div class="actions"><button class="btn" data-close="adminOverlay">CANCEL</button><button class="btn dark" id="adminLoginSubmit">LOGIN</button></div></div></div>
 <script id="password-recovery-system">
 (function(){
-  function redirectUrl(){ return window.location.origin + window.location.pathname; }
+  let recoveryHandled=false;
+
+  function isRecoveryUrl(){
+    const hash=window.location.hash||"";
+    const query=new URLSearchParams(window.location.search);
+    return hash.includes("type=recovery") || query.get("type")==="recovery";
+  }
+
+  async function completeRecovery(){
+    if(recoveryHandled || !isRecoveryUrl()) return;
+    recoveryHandled=true;
+
+    // Give Supabase a moment to establish the recovery session from the email link.
+    await new Promise(resolve=>setTimeout(resolve,1200));
+
+    try{
+      const {data,error}=await supabaseClient.auth.getSession();
+      if(error) throw error;
+      if(!data?.session){
+        recoveryHandled=false;
+        alert("THE RESET LINK COULD NOT BE ACTIVATED. PLEASE REQUEST A NEW RESET EMAIL.");
+        return;
+      }
+
+      const password=prompt("NEW ADMIN PASSWORD:");
+      if(password===null){ recoveryHandled=false; return; }
+      if(password.length<6){
+        alert("PASSWORD MUST BE AT LEAST 6 CHARACTERS.");
+        recoveryHandled=false;
+        return;
+      }
+
+      const confirmation=prompt("CONFIRM NEW PASSWORD:");
+      if(password!==confirmation){
+        alert("PASSWORDS DO NOT MATCH.");
+        recoveryHandled=false;
+        return;
+      }
+
+      const {error:updateError}=await supabaseClient.auth.updateUser({password});
+      if(updateError) throw updateError;
+
+      alert("PASSWORD UPDATED. YOU CAN NOW LOG IN.");
+      await supabaseClient.auth.signOut();
+      history.replaceState({},document.title,window.location.pathname);
+      document.getElementById("adminBtn")?.click();
+    }catch(e){
+      console.error("Password recovery failed:",e);
+      alert("PASSWORD RESET FAILED: "+(e?.message||"PLEASE REQUEST A NEW LINK."));
+      recoveryHandled=false;
+    }
+  }
+
   async function sendReset(){
     const email=(document.getElementById("adminEmail")?.value||"").trim() || "anitatigranyan19@gmail.com";
     const msg=document.getElementById("adminMessage");
-    if(!email){ if(msg)msg.textContent="ENTER EMAIL FIRST"; return; }
-    if(msg)msg.textContent="SENDING RESET EMAIL…";
+    if(msg) msg.textContent="SENDING RESET EMAIL…";
     try{
-      const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:redirectUrl()});
+      const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{
+        redirectTo:window.location.origin+window.location.pathname
+      });
       if(error) throw error;
-      if(msg)msg.textContent="RESET EMAIL SENT · CHECK YOUR INBOX";
+      if(msg) msg.textContent="RESET EMAIL SENT · CHECK YOUR INBOX";
     }catch(e){
-      console.error(e);
-      if(msg)msg.textContent="RESET FAILED · "+(e?.message||"TRY AGAIN");
+      console.error("Reset email failed:",e);
+      if(msg) msg.textContent="RESET FAILED · "+(e?.message||"TRY AGAIN");
     }
   }
-  async function handleRecovery(){
-    if(typeof supabaseClient==="undefined" || !supabaseClient) return;
-    const hash=window.location.hash||"";
-    const query=new URLSearchParams(window.location.search);
-    if(!hash.includes("type=recovery") && query.get("type")!=="recovery") return;
-    setTimeout(async()=>{
-      const {data:sessionData}=await supabaseClient.auth.getSession();
-      if(!sessionData?.session){
-        alert("RECOVERY LINK COULD NOT BE ACTIVATED. PLEASE REQUEST A NEW RESET EMAIL.");
-        return;
-      }
-      const password=prompt("NEW ADMIN PASSWORD:");
-      if(password===null)return;
-      if(password.length<6){alert("PASSWORD MUST BE AT LEAST 6 CHARACTERS.");return;}
-      const confirmPassword=prompt("CONFIRM NEW PASSWORD:");
-      if(password!==confirmPassword){alert("PASSWORDS DO NOT MATCH.");return;}
-      const {error}=await supabaseClient.auth.updateUser({password});
-      if(error){alert("PASSWORD RESET FAILED: "+error.message);return;}
-      alert("PASSWORD UPDATED. YOU CAN NOW LOG IN.");
-      history.replaceState({},document.title,window.location.pathname);
-      document.getElementById("adminBtn")?.click();
-    },700);
-  }
+
   document.addEventListener("DOMContentLoaded",function(){
     document.getElementById("forgotPasswordBtn")?.addEventListener("click",sendReset);
-    handleRecovery();
+
+    supabaseClient.auth.onAuthStateChange(function(event){
+      if(event==="PASSWORD_RECOVERY") completeRecovery();
+    });
+
+    if(isRecoveryUrl()) completeRecovery();
   });
 })();
 </script>
