@@ -2162,7 +2162,8 @@ async function publishLocalArchive(){
   if(result.ok){alert("ARCHIVE PUBLISHED TO CLOUD.");renderAdminPanel();render();}
   else alert("CLOUD PUBLISH FAILED. CHECK THE CLOUD STATUS AND TRY AGAIN.");
 }
-\nasync function initAdminAuth(){
+
+async function initAdminAuth(){
   const {data}=await supabaseClient.auth.getSession();
   adminUser=data?.session?.user||null;
   setAdminUI();
