@@ -1420,7 +1420,7 @@ const INITIAL_DATA=[{"no": "1", "code": "CH-AG-01", "region": "Արագածոտ�
 const REAL_STATS={"objects": 96, "settlements": 96, "regions": 10, "abandoned": 0};
 const SUPABASE_URL="https://ehtfijhacqaqzntkpopq.supabase.co";
 const SUPABASE_KEY="sb_publishable_38w60vUcqJ1w9KSPJpJUYg_rxcw5non";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); window.supabaseClient=supabaseClient; window.getArchiveAdminUser=()=>adminUser;
 let cloudMode=true, cloudReady=false, cloudSyncTimer=null, cloudKnownIds=new Set();
 let researchLog=[];let caseIds=[];let articleBlocks=[];let sitePages=[];
 let compareIds=[];let discoveries=[];
@@ -1568,6 +1568,44 @@ function fromCloudRow(x){
     extra_data:x.extra_data||{},usage:(x.extra_data&&x.extra_data.usage)||x.usage||"",...(x.extra_data||{})
   };
 }
+async function syncBuildingPhotos(building){
+  if(!adminUser||!building?.id)return {ok:false,reason:"admin_required"};
+  try{
+    const {data:existing,error:readError}=await supabaseClient.from("photos").select("id,storage_path,file_url").eq("building_id",building.id);
+    if(readError)throw readError;
+    const desired=Array.isArray(window.editPhotoItems)?window.editPhotoItems:[];
+    const rows=[];
+    for(let i=0;i<desired.length;i++){
+      const item=desired[i]||{}; let url=String(item.url||""), storagePath="";
+      if(url.startsWith("data:")){
+        const comma=url.indexOf(","); if(comma<0)continue;
+        const meta=url.slice(5,comma),b64=url.slice(comma+1),mime=(meta.split(";")[0]||"image/jpeg");
+        const ext=(mime.split("/")[1]||"jpg").replace("jpeg","jpg").replace("svg+xml","svg");
+        const bytes=Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0));
+        const path=String(building.id)+"/"+Date.now()+"-"+i+"-"+Math.random().toString(36).slice(2,8)+"."+ext;
+        const up=await supabaseClient.storage.from("archive-photos").upload(path,bytes,{contentType:mime,upsert:false});
+        if(up.error)throw up.error; storagePath=path;
+        url=supabaseClient.storage.from("archive-photos").getPublicUrl(path).data.publicUrl;
+      }
+      if(url)rows.push({building_id:Number(building.id),file_url:url,storage_path:storagePath||null,category:String(item.category||"EXTERIOR").toUpperCase(),caption:String(item.caption||""),sort_order:i});
+    }
+    if(existing?.length){
+      const paths=existing.map(x=>x.storage_path).filter(Boolean);
+      if(paths.length)await supabaseClient.storage.from("archive-photos").remove(paths);
+      const del=await supabaseClient.from("photos").delete().eq("building_id",building.id); if(del.error)throw del.error;
+    }
+    if(rows.length){const ins=await supabaseClient.from("photos").insert(rows);if(ins.error)throw ins.error;}
+    return {ok:true,count:rows.length};
+  }catch(err){console.error("Supabase photo archive error",err);return {ok:false,reason:"photo_error",error:err};}
+}
+async function loadCloudPhotos(rows){
+  const ids=rows.map(x=>Number(x.id)).filter(Boolean);if(!ids.length)return rows;
+  const {data,error}=await supabaseClient.from("photos").select("building_id,file_url,category,caption,sort_order").in("building_id",ids).order("sort_order",{ascending:true});
+  if(error){console.warn("Cloud photo load failed",error);return rows;}
+  const byId=new Map();
+  (data||[]).forEach(p=>{const id=Number(p.building_id);if(!byId.has(id))byId.set(id,[]);byId.get(id).push({url:p.file_url,category:(p.category||"EXTERIOR").toUpperCase(),caption:p.caption||""});});
+  return rows.map(x=>{const items=byId.get(Number(x.id))||[];return items.length?{...x,photos:items.map(p=>p.url),photo_categories:items.map(p=>p.category),photo_items:items}:x;});
+}
 async function syncBuildingToCloud(building){
   if(!cloudReady) return {ok:false,reason:"cloud_offline"};
   if(!adminUser) return {ok:false,reason:"admin_required"};
@@ -1585,6 +1623,8 @@ async function syncBuildingToCloud(building){
       if(error)throw error;
       if(data&&data.id!=null) building.id=data.id;
     }
+    const photoResult=await syncBuildingPhotos(building);
+    if(!photoResult.ok)throw photoResult.error||new Error("PHOTO ARCHIVE SAVE FAILED");
     cloudKnownIds.add(Number(building.id));
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
     return {ok:true};
@@ -1594,6 +1634,7 @@ async function syncBuildingToCloud(building){
     return {ok:false,reason:"cloud_error",error:err};
   }
 }
+window.syncBuildingToCloud=syncBuildingToCloud;
 async function syncAllToCloud(){
   if(!adminUser)return {ok:false,reason:"admin_required"};
   try{
@@ -1635,8 +1676,9 @@ async function loadCloud(){
     render();
     return;
   }
-  const cloudRows=(data||[]).map(fromCloudRow);
+  let cloudRows=(data||[]).map(fromCloudRow);
   if(cloudRows.length){
+    cloudRows=await loadCloudPhotos(cloudRows);
     db=cloudRows;
     cloudKnownIds=new Set(db.map(x=>Number(x.id)).filter(Boolean));
     localStorage.setItem("dk_archive_v9",JSON.stringify(db));
@@ -1703,6 +1745,8 @@ async function bootCloud(){
   renderFieldwork();
   renderData();
   await loadCloud();
+  if(window.loadFieldworkReports)await window.loadFieldworkReports();
+  if(window.renderFieldwork)window.renderFieldwork();
 }
 function fill(){let r=document.getElementById("region"),c=document.getElementById("condition"),rv=r.value,cv=c.value,rs=[...new Set(db.map(x=>x.region).filter(Boolean))].sort(),cs=[...new Set(db.map(x=>x.condition).filter(Boolean))].sort();r.innerHTML='<option value="">ALL MARZES</option>'+rs.map(x=>`<option>${esc(x)}</option>`).join("");c.innerHTML='<option value="">ALL CONDITIONS</option>'+cs.map(x=>`<option>${esc(x)}</option>`).join("");r.value=rv;c.value=cv;}
 let catalogStatusFilter="";
