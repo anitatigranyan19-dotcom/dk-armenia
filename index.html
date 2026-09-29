@@ -534,7 +534,44 @@ body[style*="background-image"] .hero-bg{
 @media(max-width:700px){.fieldwork-section{padding:24px 14px!important}.field-filterbar{flex-wrap:wrap}.field-search{width:100%;flex-basis:100%}.field-filters{width:100%;overflow:auto}.field-table-head,.field-row{grid-template-columns:34px minmax(150px,1fr) 95px 90px;padding-left:10px;padding-right:10px}.field-region,.field-date{display:none}.field-table-head .region-head,.field-table-head .date-head{display:none}.field-photos{grid-template-columns:repeat(2,1fr)}.field-related{grid-template-columns:1fr}.field-related>div{border-right:0;border-bottom:1px solid var(--line)}.field-observations{grid-template-columns:1fr}.fieldwork-section .fieldwork-stats{grid-template-columns:1fr!important}.fieldwork-section .field-stat{border-right:0!important;border-bottom:1px solid var(--line)!important}}
 
 
-/* ===== EDITORIAL ABOUT / FINAL DESIGN ===== */
+
+/* ===== ADMIN CONTROL PANEL ===== */
+.admin-panel-modal{max-width:1180px!important}
+.admin-panel-head{display:flex;justify-content:space-between;align-items:end;gap:20px;border-bottom:1px solid var(--line);padding-bottom:18px}
+.admin-panel-head h2{margin:4px 0 0!important;font-size:42px!important}
+.admin-live{font-size:9px;letter-spacing:.12em;color:#19724a}
+.admin-metrics{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}
+.admin-metric{padding:18px;border-right:1px solid var(--line)}
+.admin-metric:last-child{border-right:0}
+.admin-metric b{display:block;font-size:31px;font-weight:400}
+.admin-metric span{display:block;margin-top:6px;font-size:8px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.admin-panel-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:20px}
+.admin-box{background:var(--paper);padding:20px}
+.admin-box-head{display:flex;justify-content:space-between;align-items:end;gap:14px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+.admin-box-head h3{margin:4px 0 0;font-size:22px;font-weight:400}
+.admin-quality-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:11px}
+.admin-quality-row span{color:var(--muted);font-size:9px}
+.admin-quality-row button{border:1px solid var(--line);background:transparent;padding:6px 8px;font-size:8px;letter-spacing:.08em;cursor:pointer}
+.admin-quality-row button:hover{background:var(--ink);color:var(--paper)}
+.admin-cloud-stat{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0;font-size:10px}
+.admin-cloud-stat b{font-weight:400}
+.admin-cloud-ok{color:#19724a}.admin-cloud-warn{color:#8b5b00}.admin-cloud-error{color:#a33}
+.admin-history-box{border:1px solid var(--line);margin-top:20px}
+.admin-history-row{display:grid;grid-template-columns:140px 90px 1fr auto;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:10px;align-items:center}
+.admin-history-row:last-child{border-bottom:0}
+.admin-history-row .muted{color:var(--muted)}
+.admin-history-row .action{font-size:8px;letter-spacing:.1em;border:1px solid var(--line);padding:5px 6px;width:max-content}
+.admin-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:18px}
+.admin-footnote{margin-top:16px;line-height:1.5}
+@media(max-width:850px){
+  .admin-metrics{grid-template-columns:repeat(2,1fr)}
+  .admin-metric:nth-child(2),.admin-metric:nth-child(4){border-right:0}
+  .admin-metric:nth-child(n+3){border-top:1px solid var(--line)}
+  .admin-panel-grid{grid-template-columns:1fr}
+  .admin-history-row{grid-template-columns:1fr auto;gap:5px}
+  .admin-history-row .history-object{grid-column:1/-1}
+}
+\n/* ===== EDITORIAL ABOUT / FINAL DESIGN ===== */
 .about-editorial{padding:34px 28px 0;background:var(--paper);border-bottom:1px solid var(--line);color:var(--ink)}
 .about-topbar{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:14px;font-size:10px;letter-spacing:.16em;color:var(--muted)}
 .about-edit-btn{border:1px solid var(--ink);background:transparent;padding:8px 12px;font-size:10px;letter-spacing:.12em;cursor:pointer}.about-edit-btn:hover{background:var(--ink);color:#fff}
@@ -933,7 +970,7 @@ body[style*="background-image"] .hero-bg{
 <body>
 <header><a class="brand" href="#" id="siteLogo">DK / ARMENIA</a><nav aria-label="Main navigation" class="nav">
 <a href="#catalog">CATALOG</a><a href="#map-section">MAP</a><a href="#routes">ROUTES</a><a href="#fieldwork">FIELDWORK</a><a href="#data">DATA</a><a href="#support">SUPPORT</a><a href="#about">ABOUT</a>
-</nav><div class="head"><span class="cloud-status" id="cloudStatus">CLOUD</span><button class="btn" id="settingsBtn">SETTINGS</button><button class="btn" id="adminBtn">ADMIN LOGIN</button><button class="btn" id="backupBtn">BACKUP</button><button class="btn dark" id="addBtn">+ ADD</button></div></header>
+</nav><div class="head"><span class="cloud-status" id="cloudStatus">CLOUD</span><button class="btn" id="settingsBtn">SETTINGS</button><button class="btn" id="adminBtn">ADMIN LOGIN</button><button class="btn" id="adminPanelBtn" style="display:none">ADMIN PANEL</button><button class="btn" id="backupBtn">BACKUP</button><button class="btn dark" id="addBtn">+ ADD</button></div></header>
 <section class="hero">
 <div class="hero-bg"></div>
 <div class="kicker">DIGITAL ARCHIVE / ARCHITECTURAL ATLAS / ARMENIA</div>
@@ -1266,6 +1303,36 @@ Interior conservation"></textarea></div>
 </div></div>
 <div class="actions"><button class="btn" data-close="settingsOverlay">CANCEL</button><button class="btn dark" id="saveSettings">SAVE SETTINGS</button></div></div></div>
 <div class="overlay" id="adminOverlay"><div class="modal" style="max-width:420px"><button class="close" data-close="adminOverlay">×</button><h2>ADMIN LOGIN</h2><div class="small">Sign in to edit the archive and interface.</div><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input autocomplete="username" id="adminEmail" type="email"/></div><div class="field full"><label>Password</label><input autocomplete="current-password" id="adminPassword" type="password"/></div><div class="field full"><div class="small" id="adminMessage"></div></div></div><div style="margin-top:8px;text-align:left"><button class="btn" id="forgotPasswordBtn" type="button" style="width:100%;text-align:left;border:0;border-top:1px solid var(--line);padding:12px 0;background:transparent;color:var(--muted);letter-spacing:.08em">FORGOT PASSWORD? &nbsp;→</button></div><div class="actions"><button class="btn" data-close="adminOverlay">CANCEL</button><button class="btn dark" id="adminLoginSubmit">LOGIN</button></div></div></div>
+
+<div class="overlay" id="adminPanelOverlay">
+<div class="modal admin-panel-modal">
+<button class="close" data-close="adminPanelOverlay">×</button>
+<div class="admin-panel-head">
+  <div><div class="small">ARCHIVE CONTROL / PRIVATE WORKSPACE</div><h2>ADMIN PANEL</h2></div>
+  <div class="admin-live" id="adminLiveStatus">CHECKING…</div>
+</div>
+<div class="admin-metrics" id="adminMetrics"></div>
+<div class="admin-panel-grid">
+  <section class="admin-box">
+    <div class="admin-box-head"><div><div class="small">DATA QUALITY</div><h3>Needs attention</h3></div><button class="btn" id="adminQualityRefresh">REFRESH</button></div>
+    <div id="adminQualityList" class="admin-quality-list"></div>
+  </section>
+  <section class="admin-box">
+    <div class="admin-box-head"><div><div class="small">CLOUD ARCHIVE</div><h3>Database</h3></div></div>
+    <div id="adminCloudBox"></div>
+  </section>
+</div>
+<section class="admin-box admin-history-box">
+  <div class="admin-box-head"><div><div class="small">AUDIT TRAIL</div><h3>Recent changes</h3></div><button class="btn" id="adminHistoryRefresh">REFRESH</button></div>
+  <div id="adminHistoryList" class="admin-history-list"></div>
+</section>
+<div class="admin-actions">
+  <button class="btn" id="adminDownloadBackup">DOWNLOAD BACKUP</button>
+  <button class="btn" id="adminExportCsv">EXPORT CSV</button>
+  <button class="btn dark" id="adminPublishCloud" style="display:none">PUBLISH LOCAL ARCHIVE → CLOUD</button>
+</div>
+<div class="small admin-footnote">Changes made through the archive editor are saved to Supabase when you are signed in. This panel also checks missing research data before publication.</div>
+</div></div>
 <script id="password-recovery-system">
 (function(){
   let recoveryHandled=false;
@@ -1528,15 +1595,21 @@ async function syncBuildingToCloud(building){
   }
 }
 async function syncAllToCloud(){
-  if(!cloudReady||!adminUser)return {ok:false,reason:!cloudReady?"cloud_offline":"admin_required"};
+  if(!adminUser)return {ok:false,reason:"admin_required"};
   try{
-    // Full sync remains available for maintenance/imports, but passport editing
-    // uses syncBuildingToCloud() so one edit never uploads the entire archive.
+    // Full sync is an explicit maintenance/bootstrap action. Passport editing
+    // still uses syncBuildingToCloud() so one edit never uploads the archive.
+    cloudReady=true;
     for(const building of db){
       const result=await syncBuildingToCloud(building);
       if(!result.ok)throw result.error||new Error(result.reason||"Cloud sync failed");
     }
+    // Explicit IDs are allowed for the BY DEFAULT identity column. Repair the
+    // sequence afterward so future newly-created objects receive fresh IDs.
+    const seqResult=await supabaseClient.rpc("repair_buildings_sequence");
+    if(seqResult.error)throw seqResult.error;
     cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
+    localStorage.setItem("dk_archive_v9",JSON.stringify(db));
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
     return {ok:true};
   }catch(err){
@@ -1994,11 +2067,102 @@ document.getElementById("saveSettings").onclick=()=>{
 let adminUser=null;
 function setAdminUI(){
   const b=document.getElementById("adminBtn");
+  const p=document.getElementById("adminPanelBtn");
   if(!b)return;
   b.textContent=adminUser?"ADMIN / LOGOUT":"ADMIN LOGIN";
   b.classList.toggle("dark",!!adminUser);
+  if(p)p.style.display=adminUser?"inline-block":"none";
 }
-async function initAdminAuth(){
+
+function adminOpenPanel(){
+  if(!adminUser){show("adminOverlay");return;}
+  show("adminPanelOverlay");
+  renderAdminPanel();
+}
+function adminQualityItems(){
+  const checks=[
+    ["Missing coordinates","Objects without latitude / longitude",x=>!String(x.lat||"").trim()||!String(x.lng||"").trim()],
+    ["Missing photographs","Objects without an image",x=>!(Array.isArray(x.photos)&&x.photos.length)||(!x._photo&&!x.photos?.length)],
+    ["Missing construction year","Objects without a construction year",x=>!String(x.year||"").trim()],
+    ["Missing condition","Objects without condition data",x=>!String(x.condition||"").trim()],
+    ["Missing current use","Objects without current function",x=>!String(x.current_use||"").trim()],
+    ["Missing source","Objects without a source",x=>!String(x.source||"").trim() && !String(x.sources||"").trim()],
+    ["Missing architect","Objects without architect data",x=>!String(x.architect||"").trim()]
+  ];
+  return checks.map(([label,desc,fn])=>({label,desc,count:db.filter(fn).length,total:db.length}));
+}
+function renderAdminPanel(){
+  if(!adminUser)return;
+  const total=db.length;
+  const visited=db.filter(x=>String(x.visit_status||"").toLowerCase()==="visited").length;
+  const coords=db.filter(x=>String(x.lat||"").trim()&&String(x.lng||"").trim()).length;
+  const photos=db.filter(x=>(Array.isArray(x.photos)&&x.photos.length)||x._photo).length;
+  const source=db.filter(x=>String(x.source||"").trim()||String(x.sources||"").trim()).length;
+  const metric=(n,l)=>'<div class="admin-metric"><b>'+n+'</b><span>'+l+'</span></div>';
+  const m=document.getElementById("adminMetrics");
+  if(m)m.innerHTML=metric(total,"Objects")+metric(visited,"Visited")+metric(coords,"With coordinates")+metric(photos,"With photographs")+metric(source,"With sources");
+  const live=document.getElementById("adminLiveStatus");
+  if(live){live.textContent=cloudReady?"CLOUD CONNECTED · ADMIN":"CLOUD EMPTY / LOCAL ARCHIVE";live.className="admin-live "+(cloudReady?"admin-cloud-ok":"admin-cloud-warn");}
+  const quality=document.getElementById("adminQualityList");
+  if(quality){
+    quality.innerHTML=adminQualityItems().map(q=>'<div class="admin-quality-row"><div><b>'+esc(q.label)+'</b><span>'+esc(q.desc)+'</span></div><strong>'+q.count+'</strong><button type="button" data-quality="'+esc(q.label)+'">REVIEW</button></div>').join("");
+    quality.querySelectorAll("[data-quality]").forEach(btn=>btn.onclick=()=>adminReviewQuality(btn.dataset.quality));
+  }
+  const cloudBox=document.getElementById("adminCloudBox");
+  if(cloudBox){
+    const cloudCount=cloudKnownIds.size||0;
+    cloudBox.innerHTML='<div class="admin-cloud-stat"><span>Local archive</span><b>'+total+' objects</b></div>'+
+      '<div class="admin-cloud-stat"><span>Cloud archive</span><b>'+cloudCount+' objects</b></div>'+
+      '<div class="admin-cloud-stat"><span>Supabase status</span><b class="'+(cloudReady?"admin-cloud-ok":"admin-cloud-warn")+'">'+(cloudReady?"READY":"EMPTY / LOCAL")+'</b></div>'+
+      '<div class="admin-cloud-stat"><span>Storage</span><b>URLs preserved in archive</b></div>';
+  }
+  const publish=document.getElementById("adminPublishCloud");
+  if(publish)publish.style.display=cloudCount===0&&total?"inline-block":"none";
+  loadAdminHistory();
+}
+function adminReviewQuality(label){
+  const q=adminQualityItems().find(x=>x.label===label);
+  if(!q)return;
+  const checks={
+    "Missing coordinates":x=>!String(x.lat||"").trim()||!String(x.lng||"").trim(),
+    "Missing photographs":x=>!(Array.isArray(x.photos)&&x.photos.length)&&!x._photo,
+    "Missing construction year":x=>!String(x.year||"").trim(),
+    "Missing condition":x=>!String(x.condition||"").trim(),
+    "Missing current use":x=>!String(x.current_use||"").trim(),
+    "Missing source":x=>!String(x.source||"").trim()&&!String(x.sources||"").trim(),
+    "Missing architect":x=>!String(x.architect||"").trim()
+  };
+  const predicate=checks[label]; if(!predicate)return;
+  const missing=db.filter(predicate);
+  if(!missing.length){alert("NO OBJECTS NEED REVIEW.");return;}
+  const names=missing.slice(0,20).map((x,i)=>String(i+1).padStart(2,"0")+"  "+(x.name||"UNTITLED")+" — "+(x.settlement||"")).join("\n");
+  alert(label.toUpperCase()+"\\n\\n"+names+(missing.length>20?"\\n\\n+ "+(missing.length-20)+" MORE":""));
+}
+async function loadAdminHistory(){
+  const box=document.getElementById("adminHistoryList");
+  if(!box)return;
+  if(!adminUser){box.innerHTML="";return;}
+  const {data,error}=await supabaseClient.from("building_history").select("id,building_id,action,created_at").order("created_at",{ascending:false}).limit(20);
+  if(error){box.innerHTML='<div class="small">HISTORY UNAVAILABLE</div>';return;}
+  if(!data?.length){box.innerHTML='<div class="small">NO CLOUD CHANGES YET.</div>';return;}
+  box.innerHTML=data.map(h=>{
+    const b=db.find(x=>Number(x.id)===Number(h.building_id));
+    const date=new Date(h.created_at).toLocaleString();
+    return '<div class="admin-history-row"><span class="muted">'+esc(date)+'</span><span class="action">'+esc(h.action)+'</span><span class="history-object">'+esc(b?.name||("OBJECT #"+h.building_id))+'</span><span class="muted">#'+esc(h.building_id)+'</span></div>';
+  }).join("");
+}
+async function publishLocalArchive(){
+  if(!adminUser)return;
+  const ok=confirm("Publish the current local archive ("+db.length+" objects) to Supabase? This is intended for the first cloud bootstrap.");
+  if(!ok)return;
+  const btn=document.getElementById("adminPublishCloud");
+  if(btn){btn.disabled=true;btn.textContent="PUBLISHING…";}
+  const result=await syncAllToCloud();
+  if(btn){btn.disabled=false;btn.textContent="PUBLISH LOCAL ARCHIVE → CLOUD";}
+  if(result.ok){alert("ARCHIVE PUBLISHED TO CLOUD.");renderAdminPanel();render();}
+  else alert("CLOUD PUBLISH FAILED. CHECK THE CLOUD STATUS AND TRY AGAIN.");
+}
+\nasync function initAdminAuth(){
   const {data}=await supabaseClient.auth.getSession();
   adminUser=data?.session?.user||null;
   setAdminUI();
@@ -2014,6 +2178,12 @@ document.getElementById("adminBtn").onclick=async()=>{
   document.getElementById("adminMessage").textContent="";
   show("adminOverlay");
 };
+document.getElementById("adminPanelBtn").onclick=()=>adminOpenPanel();
+document.getElementById("adminQualityRefresh").onclick=()=>renderAdminPanel();
+document.getElementById("adminHistoryRefresh").onclick=()=>loadAdminHistory();
+document.getElementById("adminDownloadBackup").onclick=()=>document.getElementById("backupJsonBtn")?.click();
+document.getElementById("adminExportCsv").onclick=()=>document.getElementById("backupCsvBtn")?.click();
+document.getElementById("adminPublishCloud").onclick=publishLocalArchive;
 document.getElementById("adminLoginSubmit").onclick=async()=>{
   const email=document.getElementById("adminEmail").value.trim();
   const password=document.getElementById("adminPassword").value;
