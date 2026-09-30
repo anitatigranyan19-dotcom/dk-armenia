@@ -1724,7 +1724,29 @@ function showCloudStatus(text){
   el.textContent=text;
   el.className="cloud-status "+(text.startsWith("CLOUD SAVED")||text.startsWith("CLOUD ·")?"ok":"error");
 }
+function recoverLocalPassportBackup(){
+  try{
+    const current=JSON.parse(localStorage.getItem("dk_archive_v9")||"null");
+    const backup=JSON.parse(localStorage.getItem("dk_passport_backup_v2")||"null");
+    if(!Array.isArray(backup)||!backup.length)return false;
+    const currentCount=Array.isArray(current)?current.length:0;
+    const initialCount=typeof INITIAL_DATA!=="undefined"?INITIAL_DATA.length:96;
+    // Prefer the explicit passport backup when the active archive is missing,
+    // reset to the initial dataset, or is clearly smaller than the backup.
+    if(!Array.isArray(current) || currentCount===0 || (currentCount<=initialCount && backup.length>currentCount)){
+      localStorage.setItem("dk_archive_v9",JSON.stringify(backup));
+      localStorage.setItem("dk_archive_dirty_v1","1");
+      localStorage.setItem("dk_passport_recovery_v1",new Date().toISOString());
+      db=backup;
+      return true;
+    }
+  }catch(e){console.warn("Local passport recovery failed:",e);}
+  return false;
+}
 async function loadCloud(){
+  // Recover the last explicit passport backup before any cloud request can overwrite local state.
+  recoverLocalPassportBackup();
+
   showCloudStatus("CONNECTING…");
   const {data,error}=await supabaseClient.from("buildings").select("*").order("id",{ascending:true});
   if(error){
