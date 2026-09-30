@@ -2412,7 +2412,7 @@ document.addEventListener("click",e=>{
 <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:18px">
 <div class="small" style="margin-bottom:10px">RESTORE A PREVIOUS BACKUP</div>
 <input id="restoreBackupInput" type="file" accept="application/json,.json" style="display:none">
-<button class="btn" id="restoreBackupBtn" type="button">RESTORE BACKUP…</button>
+<button class="btn" id="restoreBackupBtn" type="button">RESTORE BACKUP…</button><button class="btn" id="recoverLocalBtn" type="button" style="margin-left:8px">RECOVER THIS BROWSER</button>
 <div class="small" id="backupRestoreStatus" style="margin-top:10px"></div>
 </div>
 <div class="small" style="margin-top:18px">
@@ -3341,6 +3341,48 @@ try {
           safeWorkspaceSave();
         },700);
       });
+    }
+
+    // Recover the latest workspace that is still stored in this browser.
+    const recoverLocal=document.getElementById("recoverLocalBtn");
+    if(recoverLocal){
+      recoverLocal.onclick=()=>{
+        try{
+          const archive=JSON.parse(localStorage.getItem("dk_archive_v9")||"null");
+          const workspace=JSON.parse(localStorage.getItem("dk_workspace_v10")||"null");
+          const savedAt=localStorage.getItem("dk_local_autosave_at_v2")||localStorage.getItem("dk_workspace_saved_at_v1")||"";
+          if(Array.isArray(archive)){
+            db=archive;
+            localStorage.setItem("dk_archive_dirty_v1","1");
+          }
+          if(workspace){
+            if(Array.isArray(workspace.sitePages))sitePages=workspace.sitePages;
+            if(Array.isArray(workspace.caseIds))caseIds=workspace.caseIds;
+            if(Array.isArray(workspace.researchLog))researchLog=workspace.researchLog;
+            if(Array.isArray(workspace.articleBlocks))articleBlocks=workspace.articleBlocks;
+            if(Array.isArray(workspace.discoveries))discoveries=workspace.discoveries;
+            localStorage.setItem("dk_workspace_dirty_v1","1");
+          }
+          const s=localStorage.getItem("dk_settings_v9");
+          if(s){
+            const parsed=JSON.parse(s);
+            Object.keys(parsed||{}).forEach(k=>{if(parsed[k]!==undefined)settings[k]=parsed[k]});
+            localStorage.setItem("dk_settings_dirty_v1","1");
+          }
+          if(typeof render==="function")render();
+          if(typeof renderFieldwork==="function")renderFieldwork();
+          if(typeof renderData==="function")renderData();
+          if(typeof applyInterface==="function")applyInterface();
+          if(typeof updateStats==="function")updateStats();
+          status.textContent=(archive||workspace) ? "LOCAL RECOVERED"+(savedAt?" · "+savedAt.replace("T"," ").slice(0,19):"") : "NO LOCAL SNAPSHOT FOUND";
+          status.className="cloud-status "+((archive||workspace)?"ok":"error");
+          if(archive||workspace) safeWorkspaceSave();
+        }catch(err){
+          console.error(err);
+          status.textContent="LOCAL RECOVERY FAILED · "+err.message;
+          status.className="cloud-status error";
+        }
+      };
     }
 
     // Complete backup restore.
