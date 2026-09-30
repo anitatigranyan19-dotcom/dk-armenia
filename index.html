@@ -3366,5 +3366,72 @@ try {
 })();
 </script>
 
+
+<script id="local-autosave-guard-v2">
+/*
+  LOCAL AUTOSAVE GUARD
+  Keeps the current browser workspace alive even if the computer is shut down
+  before a cloud sync finishes. The browser's localStorage is the local source
+  of truth whenever a local change is marked dirty.
+*/
+(function(){
+  const ARCHIVE_KEY="dk_archive_v9";
+  const SETTINGS_KEY="dk_settings_v9";
+  const ROUTE_KEY="dk_route_v10";
+  const WORKSPACE_KEY="dk_workspace_v10";
+  const SAVE_AT="dk_local_autosave_at_v2";
+
+  function saveLocalSnapshot(){
+    try{
+      if(typeof db!=="undefined" && Array.isArray(db)){
+        localStorage.setItem(ARCHIVE_KEY,JSON.stringify(db));
+        localStorage.setItem("dk_archive_dirty_v1","1");
+      }
+      if(typeof settings!=="undefined"){
+        localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
+        localStorage.setItem("dk_settings_dirty_v1","1");
+      }
+      if(typeof routeIds!=="undefined"){
+        localStorage.setItem(ROUTE_KEY,JSON.stringify(routeIds));
+      }
+      if(typeof sitePages!=="undefined" || typeof caseIds!=="undefined" || typeof researchLog!=="undefined" || typeof articleBlocks!=="undefined" || typeof discoveries!=="undefined"){
+        localStorage.setItem(WORKSPACE_KEY,JSON.stringify({
+          sitePages:typeof sitePages!=="undefined"?sitePages:[],
+          caseIds:typeof caseIds!=="undefined"?caseIds:[],
+          researchLog:typeof researchLog!=="undefined"?researchLog:[],
+          articleBlocks:typeof articleBlocks!=="undefined"?articleBlocks:[],
+          discoveries:typeof discoveries!=="undefined"?discoveries:[]
+        }));
+        localStorage.setItem("dk_workspace_dirty_v1","1");
+      }
+      localStorage.setItem(SAVE_AT,new Date().toISOString());
+      const status=document.getElementById("cloudStatus");
+      if(status && !status.textContent.startsWith("CLOUD SAVED") && !status.textContent.startsWith("CLOUD ·")){
+        status.textContent="LOCAL SAVED";
+        status.className="cloud-status ok";
+      }
+    }catch(e){
+      console.warn("Local autosave guard failed:",e);
+    }
+  }
+
+  window.saveEverythingNow=function(){
+    try{ if(typeof persist==="function") persist(); }catch(e){}
+    try{ if(typeof persistWorkspace==="function") persistWorkspace(); }catch(e){}
+    saveLocalSnapshot();
+    return true;
+  };
+
+  document.addEventListener("DOMContentLoaded",function(){
+    setTimeout(saveLocalSnapshot,1200);
+    setInterval(saveLocalSnapshot,2000);
+    window.addEventListener("pagehide",saveLocalSnapshot);
+    window.addEventListener("beforeunload",saveLocalSnapshot);
+    document.addEventListener("visibilitychange",function(){
+      if(document.visibilityState==="hidden") saveLocalSnapshot();
+    });
+  });
+})();
+</script>
 </body>
 </html>
