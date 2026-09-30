@@ -1665,14 +1665,19 @@ async function syncBuildingToCloud(building,includePhotos=false){
   if(!cloudReady) return {ok:false,reason:"cloud_offline"};
   if(!adminUser) return {ok:false,reason:"admin_required"};
   try{
-    const row=toCloudRow(building);
+    let row=toCloudRow(building);
     if(row.id){
-      // Update only the passport that was edited. Do not resend all 96 objects.
-      const {data,error}=await supabaseClient.from("buildings").update(row).eq("id",row.id).select().single();
+      // Try UPDATE first. If the cloud is empty or this row is missing,
+      // automatically INSERT it instead of losing the local passport.
+      const {data,error}=await supabaseClient.from("buildings").update(row).eq("id",row.id).select().maybeSingle();
       if(error)throw error;
-      if(!data)throw new Error("The edited passport was not found in the cloud.");
+      if(!data){
+        delete row.id;
+        const {data:inserted,error:insertError}=await supabaseClient.from("buildings").insert(row).select().single();
+        if(insertError)throw insertError;
+        if(inserted&&inserted.id!=null) building.id=inserted.id;
+      }
     }else{
-      // New object: insert one passport and take the generated id.
       delete row.id;
       const {data,error}=await supabaseClient.from("buildings").insert(row).select().single();
       if(error)throw error;
@@ -1687,7 +1692,7 @@ async function syncBuildingToCloud(building,includePhotos=false){
     return {ok:true};
   }catch(err){
     console.error("Supabase passport save error",err);
-    showCloudStatus("CLOUD ERROR");
+    showCloudStatus("CLOUD ERROR · LOCAL COPY KEPT");
     return {ok:false,reason:"cloud_error",error:err};
   }
 }
@@ -1716,6 +1721,28 @@ async function syncAllToCloud(){
     console.error("Supabase full sync error",err);
     showCloudStatus("CLOUD ERROR");
     return {ok:false,reason:"cloud_error",error:err};
+  }
+}
+async function bootstrapCloudIfEmpty(){
+  if(!adminUser)return {ok:false,reason:"admin_required"};
+  try{
+    const {count,error}=await supabaseClient.from("buildings").select("id",{count:"exact",head:true});
+    if(error)throw error;
+    if(Number(count||0)>0){
+      cloudReady=true;
+      cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
+      return {ok:true,already:true,count:Number(count)};
+    }
+    // The project currently has an empty buildings table. Publish the local
+    // 96-object archive once, then all future edits use normal per-object sync.
+    cloudReady=true;
+    const result=await syncAllToCloud();
+    return result;
+  }catch(err){
+    console.error("Cloud bootstrap failed",err);
+    cloudReady=false;
+    showCloudStatus("CLOUD ERROR · LOCAL COPY KEPT");
+    return {ok:false,reason:"cloud_bootstrap_error",error:err};
   }
 }
 function showCloudStatus(text){
@@ -1982,28 +2009,45 @@ async function saveEdit(){
   const saveButton=document.getElementById("saveBtn");
   const oldSaveText=saveButton?saveButton.textContent:"";
   if(saveButton){saveButton.disabled=true;saveButton.textContent="SAVING…";}
+  let localSaved=false;
   try{
-    // Save locally first so changes are never lost if cloud sync is slow.
+    // LOCAL SAVE FIRST — this must never depend on Supabase.
     localStorage.setItem("dk_archive_v9",JSON.stringify(db));
     localStorage.setItem("dk_passport_backup_v2",JSON.stringify(db));
-    render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
-
-    // The passport is already updated in the live UI/local backup.
-    // Then persist only this edited object to Supabase.
-    if(adminUser && cloudReady){
-      const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
-      if(!cloudResult.ok) console.warn("Cloud save failed; local copy kept.",cloudResult.error||cloudResult.reason);
-    }
-
-    close("editorOverlay");
-    if(wasObject)details(savedIndex);
+    localStorage.setItem("dk_archive_dirty_v1","1");
+    localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());
+    localSaved=true;
   }catch(err){
-    console.error(err);
-    // Keep the editor open on a real save error so the user does not lose their work.
-    alert("The passport was saved locally, but the cloud save failed. You can try saving again.");
-  }finally{
-    if(saveButton){saveButton.disabled=false;saveButton.textContent=oldSaveText||"SAVE ALL CHANGES";}
+    console.error("Local passport save failed",err);
+    alert("BROWSER STORAGE COULD NOT SAVE THIS PASSPORT. DO NOT CLOSE THE PAGE.");
+    return;
   }
+
+  // A rendering problem must not undo the saved passport.
+  try{
+    render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
+  }catch(renderError){
+    console.warn("Passport saved, but a secondary render step failed:",renderError);
+  }
+
+  // Cloud sync is secondary. If the cloud is empty, bootstrap it automatically.
+  if(adminUser){
+    try{
+      if(!cloudReady) await bootstrapCloudIfEmpty();
+      if(cloudReady){
+        const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
+        if(!cloudResult.ok) console.warn("Cloud save failed; local copy kept.",cloudResult.error||cloudResult.reason);
+      }
+    }catch(cloudError){
+      console.error("Cloud sync failed; local passport is safe.",cloudError);
+      showCloudStatus("CLOUD ERROR · LOCAL COPY KEPT");
+    }
+  }
+
+  close("editorOverlay");
+  if(wasObject)details(savedIndex);
+  if(localSaved)showCloudStatus(adminUser&&cloudReady?"CLOUD SAVED · LOCAL COPY SAFE":"LOCAL SAVED · CLOUD PENDING");
+  if(saveButton){saveButton.disabled=false;saveButton.textContent=oldSaveText||"SAVE ALL CHANGES";}
 }
 function f(id){return document.getElementById("f_"+id).value.trim();}
 function usageLabel(v){return v==="used"?"🟢 USED":v==="partially_used"?"🟡 PARTIALLY USED":v==="unused"?"⚪ UNUSED":"—";}
@@ -2382,8 +2426,14 @@ document.getElementById("adminLoginSubmit").onclick=async()=>{
   msg.textContent="SIGNING IN…";
   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
   if(error){msg.textContent=error.message;return;}
-  adminUser=data.user; setAdminUI(); showCloudStatus("ADMIN · CLOUD READY"); close("adminOverlay");
-  setTimeout(()=>{ if(cloudReady) saveCloudSettings(); },500);
+  adminUser=data.user; setAdminUI(); showCloudStatus("ADMIN · CHECKING CLOUD…"); close("adminOverlay");
+  setTimeout(async()=>{
+    const result=await bootstrapCloudIfEmpty();
+    if(result.ok){
+      showCloudStatus("CLOUD READY · "+db.length+" OBJECTS");
+      await saveCloudSettings();
+    }
+  },200);
 };
 initAdminAuth();
 loadWorkspace();
