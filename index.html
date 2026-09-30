@@ -1458,12 +1458,23 @@ let settings={style:"standard",zoom:8,marker:"status",icon:"pin",view:"grid",the
  ...JSON.parse(localStorage.getItem("dk_settings_v9")||"{}")};
 let map,layer,tile,editing=-1,newPhoto=null,newPhotos=[],addingPoint=false,mapStatus="",pendingMapIndex=null;
 let routeIds=JSON.parse(localStorage.getItem("dk_route_v10")||"[]");
+function markLocalWorkspaceDirty(){
+  try{
+    localStorage.setItem("dk_workspace_dirty_v1","1");
+    localStorage.setItem("dk_workspace_saved_at_v1",new Date().toISOString());
+  }catch(e){}
+}
 function persistWorkspace(){
   try{
     localStorage.setItem("dk_workspace_v10",JSON.stringify({
       sitePages,caseIds,researchLog,articleBlocks,discoveries
     }));
     localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
+    markLocalWorkspaceDirty();
+    if(typeof adminUser!=="undefined" && adminUser && cloudReady && typeof saveCloudSettings==="function"){
+      clearTimeout(window._dkWorkspaceCloudTimer);
+      window._dkWorkspaceCloudTimer=setTimeout(()=>saveCloudSettings(),350);
+    }
   }catch(e){console.warn("Workspace save failed",e);}
 }
 function loadWorkspace(){
@@ -1737,26 +1748,41 @@ async function loadCloud(){
 async function loadCloudSettings(){
   const {data,error}=await supabaseClient.from("settings").select("key,value");
   if(error)return;
+  const localSettingsDirty=localStorage.getItem("dk_settings_dirty_v1")==="1";
+  const localWorkspaceDirty=localStorage.getItem("dk_workspace_dirty_v1")==="1";
   (data||[]).forEach(r=>{
-    if(r.key==="interface"&&r.value){
+    if(r.key==="interface"&&r.value && !localSettingsDirty){
       const v=r.value;
       Object.keys(v||{}).forEach(k=>{if(v[k]!==undefined&&v[k]!==null)settings[k]=v[k]});
     }
-    if(r.key==="map"&&r.value){
+    if(r.key==="map"&&r.value && !localSettingsDirty){
       const v=r.value;
       if(v.style)settings.style=v.style;
       if(v.zoom)settings.zoom=+v.zoom;
       if(v.marker)settings.marker=v.marker;
       if(v.icon)settings.icon=v.icon;
     }
+    if(r.key==="workspace"&&r.value && !localWorkspaceDirty){
+      const w=r.value;
+      if(Array.isArray(w.sitePages))sitePages=w.sitePages;
+      if(Array.isArray(w.caseIds))caseIds=w.caseIds;
+      if(Array.isArray(w.researchLog))researchLog=w.researchLog;
+      if(Array.isArray(w.articleBlocks))articleBlocks=w.articleBlocks;
+      if(Array.isArray(w.discoveries))discoveries=w.discoveries;
+      localStorage.setItem("dk_workspace_v10",JSON.stringify({sitePages,caseIds,researchLog,articleBlocks,discoveries}));
+    }
   });
   localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
   applyInterface();
   setTiles(settings.style);
   if(map)map.setZoom(settings.zoom);
+  if(typeof renderPageBuilder==="function")renderPageBuilder();
+  if(typeof renderResearchLog==="function")renderResearchLog();
+  if(typeof renderArticle==="function")renderArticle();
 }
 async function saveCloudSettings(){
-  if(!cloudReady||!adminUser)return;
+  if(!cloudReady||!adminUser)return {ok:false,reason:"not_ready"};
+  const workspace={sitePages,caseIds,researchLog,articleBlocks,discoveries};
   const rows=[
     {key:"interface",value:{
       theme:settings.theme,accent:settings.accent,title:settings.title,logo:settings.logo,
@@ -1769,10 +1795,20 @@ async function saveCloudSettings(){
       heroFilter:settings.heroFilter,cardHeight:settings.cardHeight,columns:settings.columns,
       pageSize:settings.pageSize,pageBg:settings.pageBg,customCSS:settings.customCSS,content:settings.content
     }},
-    {key:"map",value:{style:settings.style,zoom:settings.zoom,marker:settings.marker,icon:settings.icon,view:settings.view}}
+    {key:"map",value:{style:settings.style,zoom:settings.zoom,marker:settings.marker,icon:settings.icon,view:settings.view}},
+    {key:"workspace",value:workspace}
   ];
   const {error}=await supabaseClient.from("settings").upsert(rows,{onConflict:"key"});
-  if(error){console.error(error);showCloudStatus("CLOUD ERROR");}
+  if(error){
+    console.error(error);
+    showCloudStatus("CLOUD ERROR · LOCAL COPY KEPT");
+    return {ok:false,error};
+  }
+  localStorage.removeItem("dk_settings_dirty_v1");
+  localStorage.removeItem("dk_workspace_dirty_v1");
+  localStorage.setItem("dk_last_cloud_save_v1",new Date().toISOString());
+  showCloudStatus("CLOUD SAVED · WORKSPACE SAFE");
+  return {ok:true};
 }
 async function deleteBuildingFromCloud(id){
   if(!cloudReady||!adminUser||!id)return;
@@ -1787,6 +1823,7 @@ async function bootCloud(){
   renderFieldwork();
   renderData();
   await loadCloud();
+  if(adminUser) await saveCloudSettings();
   if(window.loadFieldworkReports)await window.loadFieldworkReports();
   if(window.renderFieldwork)window.renderFieldwork();
 }
@@ -2172,6 +2209,7 @@ document.getElementById("saveSettings").onclick=()=>{
  });
  catalogPage=1;
  localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
+ localStorage.setItem("dk_settings_dirty_v1","1");
  applyInterface();
  setTiles(settings.style);
  if(map)map.setZoom(settings.zoom);
@@ -2309,6 +2347,7 @@ document.getElementById("adminLoginSubmit").onclick=async()=>{
   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
   if(error){msg.textContent=error.message;return;}
   adminUser=data.user; setAdminUI(); showCloudStatus("ADMIN · CLOUD READY"); close("adminOverlay");
+  setTimeout(()=>{ if(cloudReady) saveCloudSettings(); },500);
 };
 initAdminAuth();
 loadWorkspace();
