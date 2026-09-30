@@ -1551,6 +1551,10 @@ function applyInterface(){
 }
 function persist(){
   localStorage.setItem("dk_archive_v9",JSON.stringify(db));
+  try{
+    localStorage.setItem("dk_archive_dirty_v1","1");
+    localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());
+  }catch(e){}
   render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
   scheduleCloudSync();
 }
@@ -1704,6 +1708,8 @@ async function syncAllToCloud(){
     if(seqResult.error)throw seqResult.error;
     cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
     localStorage.setItem("dk_archive_v9",JSON.stringify(db));
+    localStorage.removeItem("dk_archive_dirty_v1");
+    localStorage.setItem("dk_last_archive_cloud_save_v1",new Date().toISOString());
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
     return {ok:true};
   }catch(err){
@@ -1729,7 +1735,18 @@ async function loadCloud(){
     render();
     return;
   }
+  const localArchiveDirty=localStorage.getItem("dk_archive_dirty_v1")==="1";
   let cloudRows=(data||[]).map(fromCloudRow);
+  if(localArchiveDirty){
+    const local=JSON.parse(localStorage.getItem("dk_archive_v9")||"null");
+    if(Array.isArray(local) && local.length){
+      db=local;
+      cloudReady=true;
+      showCloudStatus("LOCAL CHANGES · CLOUD SYNC PENDING");
+      render();
+      return;
+    }
+  }
   if(cloudRows.length){
     cloudRows=await loadCloudPhotos(cloudRows);
     db=cloudRows;
@@ -1951,12 +1968,9 @@ async function saveEdit(){
 
     // The passport is already updated in the live UI/local backup.
     // Then persist only this edited object to Supabase.
-    const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
-    if(!cloudResult.ok){
-      if(cloudResult.reason==="admin_required"){
-        throw new Error("ADMIN LOGIN REQUIRED");
-      }
-      throw cloudResult.error||new Error("CLOUD SAVE FAILED");
+    if(adminUser && cloudReady){
+      const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
+      if(!cloudResult.ok) console.warn("Cloud save failed; local copy kept.",cloudResult.error||cloudResult.reason);
     }
 
     close("editorOverlay");
