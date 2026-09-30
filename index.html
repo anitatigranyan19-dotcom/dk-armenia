@@ -2400,7 +2400,28 @@ async function initAdminAuth(){
   const {data}=await supabaseClient.auth.getSession();
   adminUser=data?.session?.user||null;
   setAdminUI();
-  supabaseClient.auth.onAuthStateChange((_event,session)=>{adminUser=session?.user||null;setAdminUI();});
+  if(adminUser){
+    setTimeout(async()=>{
+      const result=await bootstrapCloudIfEmpty();
+      if(result.ok){
+        showCloudStatus("CLOUD READY · "+db.length+" OBJECTS");
+        await saveCloudSettings();
+      }
+    },250);
+  }
+  supabaseClient.auth.onAuthStateChange((_event,session)=>{
+    adminUser=session?.user||null;
+    setAdminUI();
+    if(adminUser){
+      setTimeout(async()=>{
+        const result=await bootstrapCloudIfEmpty();
+        if(result.ok){
+          showCloudStatus("CLOUD READY · "+db.length+" OBJECTS");
+          await saveCloudSettings();
+        }
+      },250);
+    }
+  });
 }
 document.getElementById("adminBtn").onclick=async()=>{
   if(adminUser){
