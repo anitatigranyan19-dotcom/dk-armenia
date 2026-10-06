@@ -1727,7 +1727,7 @@ function persist(){
 }
 function scheduleCloudSync(){
   clearTimeout(cloudSyncTimer);
-  cloudSyncTimer=setTimeout(()=>syncAllToCloud(),350);
+  cloudSyncTimer=setTimeout(()=>syncDirtyArchiveToCloud(),350);
 }
 function toCloudRow(x){
   const row={
