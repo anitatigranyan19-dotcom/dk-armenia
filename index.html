@@ -1565,6 +1565,14 @@ let cloudMode=true, cloudReady=false, cloudSyncTimer=null, cloudKnownIds=new Set
 let researchLog=[];let caseIds=[];let articleBlocks=[];let sitePages=[];
 let compareIds=[];let discoveries=[];
 let db=Array.isArray(INITIAL_DATA)?INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:Array.isArray(x.photos)?x.photos:[]})):[];
+const DK_LOCAL_IDB="dk-armenia-local-v2",DK_LOCAL_STORE="archive";
+function dkCompactArchive(list){return(Array.isArray(list)?list:[]).map(x=>{const y={...x};delete y.photos;delete y.photo_items;delete y._photo;delete y._photos;return y;});}
+function dkOpenLocalDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error("IndexedDB unavailable"));const req=indexedDB.open(DK_LOCAL_IDB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(DK_LOCAL_STORE))req.result.createObjectStore(DK_LOCAL_STORE,{keyPath:"id"});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB open failed"));});}
+async function dkSaveFullArchive(list){const dbi=await dkOpenLocalDB();await new Promise((resolve,reject)=>{const tx=dbi.transaction(DK_LOCAL_STORE,"readwrite"),store=tx.objectStore(DK_LOCAL_STORE);store.put({id:"current",db:Array.isArray(list)?list:[],savedAt:new Date().toISOString()});tx.oncomplete=()=>{dbi.close();resolve();};tx.onerror=()=>{dbi.close();reject(tx.error||new Error("IndexedDB save failed"));};tx.onabort=()=>{dbi.close();reject(tx.error||new Error("IndexedDB save aborted"));};});}
+async function dkLoadFullArchive(){try{const dbi=await dkOpenLocalDB();return await new Promise((resolve,reject)=>{const tx=dbi.transaction(DK_LOCAL_STORE,"readonly"),req=tx.objectStore(DK_LOCAL_STORE).get("current");req.onsuccess=()=>{dbi.close();resolve(req.result&&Array.isArray(req.result.db)?req.result.db:null)};req.onerror=()=>{dbi.close();reject(req.error||new Error("IndexedDB read failed"));};});}catch(e){return null;}}
+async function dkSaveArchiveSafe(list,backup=true){let indexedOk=false;try{await dkSaveFullArchive(list);indexedOk=true;}catch(e){console.warn("IndexedDB archive save failed:",e);}const compact=JSON.stringify(dkCompactArchive(list));try{localStorage.removeItem("dk_archive_v9");if(backup)localStorage.removeItem("dk_passport_backup_v2");localStorage.setItem("dk_archive_v9",compact);if(backup)localStorage.setItem("dk_passport_backup_v2",compact);localStorage.setItem("dk_archive_dirty_v1","1");localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());return{ok:true,indexedOk};}catch(e){try{localStorage.removeItem("dk_archive_v9");localStorage.removeItem("dk_passport_backup_v2");localStorage.setItem("dk_archive_v9",JSON.stringify(dkCompactArchive(list).map(x=>{delete x.notes;return x;})));localStorage.setItem("dk_archive_dirty_v1","1");return{ok:true,indexedOk,fallback:true};}catch(e2){return{ok:indexedOk,indexedOk,error:e2};}}}
+async function dkLoadArchiveSafe(){let compact=null;try{compact=JSON.parse(localStorage.getItem("dk_archive_v9")||"null");}catch(e){}const full=await dkLoadFullArchive();if(Array.isArray(full)&&full.length){if(!Array.isArray(compact)||compact.length!==full.length)return full;const byId=new Map(full.map(x=>[String(x.id??x.no??""),x]));return compact.map(x=>{const f=byId.get(String(x.id??x.no??""));return f?{...f,...x,photos:Array.isArray(f.photos)?f.photos:(Array.isArray(x.photos)?x.photos:[])}:x;});}return Array.isArray(compact)?compact:null;}
+
 let settings={style:"standard",zoom:8,marker:"status",icon:"pin",view:"grid",theme:"paper",accent:"#171717",title:"CULTURAL HOUSES OF ARMENIA",logo:"DK / ARMENIA",
  bg:"#eeeae2",text:"#171717",muted:"#77736b",line:"#b9b4aa",card:"#f7f5f0",font:"Arial,sans-serif",fontSize:16,
  headerH:74,headerPad:28,navGap:24,navSize:11,navSpacing:".12em",contentPad:28,sectionPad:82,lineW:1,
@@ -1665,11 +1673,7 @@ function applyInterface(){
   applySiteContent();
 }
 function persist(){
-  localStorage.setItem("dk_archive_v9",JSON.stringify(db));
-  try{
-    localStorage.setItem("dk_archive_dirty_v1","1");
-    localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());
-  }catch(e){}
+  dkSaveArchiveSafe(db,false).catch(e=>console.warn("Safe local archive save failed:",e));
   render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
   scheduleCloudSync();
 }
@@ -1700,7 +1704,7 @@ function toCloudRow(x){
     google_maps_url:x.maps||"",
     source:x.source||"",
     notes:x.notes||"",
-    extra_data:{...(x.extra_data||{}),usage:x.usage||"",photos:x.photos||[],photo_categories:x.photo_categories||[],history:x.history||"",composition:x.composition||"",materials:x.materials||"",structure:x.structure||"",facade_features:x.facade_features||"",changes:x.changes||"",fieldwork:x.fieldwork||"",discoveries:x.discoveries||"",proposal:x.proposal||"",sources:x.sources||"",ownership:x.ownership||"",score_structure:x.score_structure||"",score_facade:x.score_facade||"",score_interior:x.score_interior||"",score_function:x.score_function||"",score_site:x.score_site||""}
+    extra_data:{...Object.fromEntries(Object.entries(x.extra_data||{}).filter(([k])=>!["photos","photo_items","_photo","_photos","photo_categories"].includes(k))),usage:x.usage||"",history:x.history||"",composition:x.composition||"",materials:x.materials||"",structure:x.structure||"",facade_features:x.facade_features||"",changes:x.changes||"",fieldwork:x.fieldwork||"",discoveries:x.discoveries||"",proposal:x.proposal||"",sources:x.sources||"",ownership:x.ownership||"",score_structure:x.score_structure||"",score_facade:x.score_facade||"",score_interior:x.score_interior||"",score_function:x.score_function||"",score_site:x.score_site||"",photo_archive:"photos_table"}
   };
   // IMPORTANT: never send a null/undefined id on INSERT.
   // Supabase/Postgres generates the id automatically.
@@ -1827,7 +1831,7 @@ async function syncAllToCloud(){
     const seqResult=await supabaseClient.rpc("repair_buildings_sequence");
     if(seqResult.error)throw seqResult.error;
     cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
-    localStorage.setItem("dk_archive_v9",JSON.stringify(db));
+    await dkSaveArchiveSafe(db,false);
     localStorage.removeItem("dk_archive_dirty_v1");
     localStorage.setItem("dk_last_archive_cloud_save_v1",new Date().toISOString());
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
@@ -1889,7 +1893,7 @@ function recoverLocalPassportBackup(){
     // Prefer the explicit passport backup when the active archive is missing,
     // reset to the initial dataset, or is clearly smaller than the backup.
     if(!Array.isArray(current) || currentCount===0 || (currentCount<=initialCount && backup.length>currentCount)){
-      localStorage.setItem("dk_archive_v9",JSON.stringify(backup));
+      dkSaveArchiveSafe(backup,true).catch(e=>console.warn("Passport backup migration failed:",e));
       localStorage.setItem("dk_archive_dirty_v1","1");
       localStorage.setItem("dk_passport_recovery_v1",new Date().toISOString());
       db=backup;
@@ -1907,7 +1911,7 @@ async function loadCloud(){
   if(error){
     console.error(error);
     cloudReady=false;
-    db=JSON.parse(localStorage.getItem("dk_archive_v9")||"null")||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));
+    db=await dkLoadArchiveSafe()||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));
     showCloudStatus("OFFLINE / LOCAL");
     render();
     return;
@@ -1915,7 +1919,7 @@ async function loadCloud(){
   const localArchiveDirty=localStorage.getItem("dk_archive_dirty_v1")==="1";
   let cloudRows=(data||[]).map(fromCloudRow);
   if(localArchiveDirty){
-    const local=JSON.parse(localStorage.getItem("dk_archive_v9")||"null");
+    const local=await dkLoadArchiveSafe();
     if(Array.isArray(local) && local.length){
       db=local;
       cloudReady=true;
@@ -1928,13 +1932,14 @@ async function loadCloud(){
     cloudRows=await loadCloudPhotos(cloudRows);
     db=cloudRows;
     cloudKnownIds=new Set(db.map(x=>Number(x.id)).filter(Boolean));
-    localStorage.setItem("dk_archive_v9",JSON.stringify(db));
+    await dkSaveArchiveSafe(db,false);
+    localStorage.removeItem("dk_archive_dirty_v1");
     cloudReady=true;
     await loadCloudSettings();
     showCloudStatus("CLOUD · "+db.length+" OBJECTS");
   }else{
     cloudReady=false;
-    db=JSON.parse(localStorage.getItem("dk_archive_v9")||"null")||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));
+    db=await dkLoadArchiveSafe()||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));
     showCloudStatus("CLOUD EMPTY / LOCAL 96");
   }
   render();
@@ -2157,16 +2162,12 @@ async function saveEdit(){
   if(saveButton){saveButton.disabled=true;saveButton.textContent="SAVING…";}
   let localSaved=false;
   try{
-    // LOCAL SAVE FIRST — this must never depend on Supabase.
-    localStorage.setItem("dk_archive_v9",JSON.stringify(db));
-    localStorage.setItem("dk_passport_backup_v2",JSON.stringify(db));
-    localStorage.setItem("dk_archive_dirty_v1","1");
-    localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());
-    localSaved=true;
+    // LOCAL SAVE FIRST — full archive goes to IndexedDB; localStorage keeps only a compact copy.
+    const localResult=await dkSaveArchiveSafe(db,true);
+    localSaved=!!localResult.ok;
+    if(!localResult.ok)console.warn("Local archive could not be saved safely:",localResult.error||localResult);
   }catch(err){
-    console.error("Local passport save failed",err);
-    alert("BROWSER STORAGE COULD NOT SAVE THIS PASSPORT. DO NOT CLOSE THE PAGE.");
-    return;
+    console.error("Safe local passport save failed:",err);
   }
 
   // A rendering problem must not undo the saved passport.
@@ -3666,8 +3667,7 @@ try {
   function saveLocalSnapshot(){
     try{
       if(typeof db!=="undefined" && Array.isArray(db)){
-        localStorage.setItem(ARCHIVE_KEY,JSON.stringify(db));
-        localStorage.setItem("dk_archive_dirty_v1","1");
+        dkSaveArchiveSafe(db,false).catch(e=>console.warn("Autosave archive failed:",e));
       }
       if(typeof settings!=="undefined"){
         localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
