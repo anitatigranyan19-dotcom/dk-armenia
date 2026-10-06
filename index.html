@@ -1237,7 +1237,7 @@ header .brand{font-weight:600;letter-spacing:.08em}
           <label class="selection-target"><input type="checkbox" data-selection-target="heritage" checked> Heritage significance</label>
           <label class="selection-target"><input type="checkbox" data-selection-target="unique" checked> Unique type / plan</label>
         </div>
-        <div class="selection-note">The system first covers the target categories, then fills the remaining places with the highest-scoring objects. After automatic selection, only the selected 5/8/10 objects are shown; the full candidate list remains available under ALL CANDIDATES.</div>
+        <div class="selection-note">The system uses manually verified criteria and first covers the target categories, then fills the remaining places with the highest-scoring eligible objects. After automatic selection, only the selected 5/8/10 objects are shown; the full list remains available under ALL CANDIDATES.</div>
       </div>
     </aside>
     <main>
@@ -3731,76 +3731,395 @@ try {
 
 <script id="project-selection-module">
 (function(){
-  const CRITERIA=[["architectural","Architectural value",7],["architect","Author / known architect",4],["historical","Historical-cultural significance",6],["artistic","Artistic-cultural value",5],["unique","Architectural / plan uniqueness",5],["typology","Typological representativeness",4],["functional","Functional condition",5],["modernization","Need for modernization",7],["physical","Physical condition",6],["adaptation","Adaptation potential",6],["social","Social significance",5],["local","Local significance for the settlement",6],["geographic","Geographic representativeness",4],["border","Borderland position",5],["urbanism","Urban significance",4],["context","Historical-cultural context",4],["territory","Adjacent territory potential",4],["tourism","Tourism / regional potential",4],["identity","Local identity potential",5],["research","Research accessibility",4]];
-  const FLAGS=[["border","Borderland"],["famousArchitect","Known architect"],["urban","Urban"],["rural","Rural"],["mountain","Mountain / remote"],["abandoned","Abandoned"],["needsModern","Needs modernization"],["heritage","Heritage significance"],["unique","Unique architecture / plan"],["art","Artistic-cultural value"]];
+  // FINAL RESEARCH METHODOLOGY:
+  // 20 criteria, each scored manually 0–5.
+  // Each criterion has a weight; weighted total is normalized to 100.
+  const CRITERIA=[
+    ["architectural","Architectural value",7],
+    ["architect","Author / known architect",4],
+    ["historical","Historical-cultural significance",6],
+    ["artistic","Artistic-cultural value",5],
+    ["unique","Architectural / plan uniqueness",5],
+    ["typology","Typological representativeness",4],
+    ["functional","Functional condition",5],
+    ["modernization","Need for modernization",7],
+    ["physical","Physical condition",6],
+    ["adaptation","Adaptation potential",6],
+    ["social","Social significance",5],
+    ["local","Local significance for the settlement",6],
+    ["geographic","Geographic representativeness",4],
+    ["border","Borderland position",5],
+    ["urbanism","Urban significance",4],
+    ["context","Historical-cultural context",4],
+    ["territory","Adjacent territory potential",4],
+    ["tourism","Tourism / regional potential",4],
+    ["identity","Local identity potential",5],
+    ["research","Research accessibility",4]
+  ];
+  const FLAGS=[
+    ["border","Borderland"],
+    ["famousArchitect","Known architect"],
+    ["urban","Urban"],
+    ["rural","Rural"],
+    ["mountain","Mountain / remote"],
+    ["abandoned","Abandoned"],
+    ["needsModern","Needs modernization"],
+    ["heritage","Heritage significance"],
+    ["unique","Unique architecture / plan"],
+    ["art","Artistic-cultural value"]
+  ];
   const TARGET_IDS=["border","famousArchitect","urban","rural","mountain","abandoned","needsModern","heritage","unique"];
-  const state={count:5,selected:[],minScore:50,sort:"score",manualScores:{},manualFlags:{},targets:[...TARGET_IDS],viewMode:"selected"};
-  let initialized=false,editingId="";
+
+  const state={
+    count:5,
+    selected:[],
+    minScore:50,
+    sort:"score",
+    manualScores:{},
+    manualFlags:{},
+    targets:[...TARGET_IDS],
+    viewMode:"selected"
+  };
+  let initialized=false, editingId="";
+
   const q=id=>document.getElementById(id);
   const safe=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-  const data=()=>Array.isArray(db)?db:[];
+  const data=()=>Array.isArray(window.db)?window.db:(Array.isArray(db)?db:[]);
   const keyFor=b=>String(b?.id??b?.no??"");
   const textOf=b=>[b?.name,b?.settlement,b?.community,b?.region,b?.architect_style,b?.notes,b?.monumental,b?.typical,b?.heritage].filter(Boolean).join(" ");
-  const isKnownArchitect=b=>!!String(b?.architect_style||"").trim()&&!/չճշտ|unknown|tbd|not added|неизвест/i.test(String(b?.architect_style||""))&&!/գյուղական մոդեռնիզմ|rural modernism/i.test(String(b?.architect_style||""));
-  const urbanPlaces=new Set(["Երևան","Գյումրի","Վանաձոր","Հրազդան","Աբովյան","Արմավիր","Արտաշատ","Արարատ","Մասիս","Վեդի","Աշտարակ","Թալին","Ապարան","Գավառ","Սևան","Մարտունի","Եղեգնաձոր","Վայք","Ջերմուկ","Իջևան","Դիլիջան","Բերդ","Նոյեմբերյան","Գորիս","Սիսիան","Կապան","Մեղրի","Քաջարան"]);
-  const touristPlaces=new Set(["Արենի","Եղեգիս","Շատին","Գլաձոր","Տաթև","Մեղրի","Գորիս","Ջերմուկ","Ծաղկաձոր","Դիլիջան","Սևան","Աշտարակ"]);
-  function baseFlagScore(b,flag){
-    const t=textOf(b).toLowerCase(),cond=String(b?.condition||"").toLowerCase()+" "+String(b?.current_use||"").toLowerCase();
-    if(flag==="famousArchitect")return isKnownArchitect(b);
-    if(flag==="urban")return urbanPlaces.has(String(b?.settlement||""))||urbanPlaces.has(String(b?.community||""));
-    if(flag==="rural")return !baseFlagScore(b,"urban");
-    if(flag==="heritage")return !!String(b?.heritage||"").trim()||/մշակութ|պատմ|հուշարձան|heritage|monument/i.test(t);
-    if(flag==="art")return !!String(b?.monumental||"").trim()||/խաչքար|մոզաիկա|մոզայկա|որմնանկար|նկար|sculpt|mosaic|mural|painting|khachkar/i.test(t);
-    if(flag==="abandoned")return /լք|abandon|չգործ|չի գործում|ruin|ավերվ/i.test(cond);
-    if(flag==="needsModern")return /վերանորոգ|վերակառուց|պահանջ|կիսա|partial|repair|renovat|reconstruct|underused|unused|inactive/i.test(t+" "+cond);
-    if(flag==="mountain")return /լեռ|mountain|remote|հեռավոր|բարձրլեռն|highland/i.test(t);
-    if(flag==="border")return false;
-    if(flag==="unique")return /individual|unique|անհատ|յուրահատ/i.test(String(b?.typical||"")+" "+t);
-    return false;
+
+  function flagMap(b){
+    const id=keyFor(b),over=state.manualFlags[id]||{},out={};
+    FLAGS.forEach(([flag])=>out[flag]=over[flag]!==undefined?!!over[flag]:false);
+    return out;
   }
-  function flagMap(b){const id=keyFor(b),over=state.manualFlags[id]||{},out={};FLAGS.forEach(([flag])=>{out[flag]=over[flag]!==undefined?!!over[flag]:!!baseFlagScore(b,flag)});return out;}
-  function autoScore(b,id){
-    const t=textOf(b).toLowerCase(),fl=flagMap(b),cond=String(b?.condition||"").toLowerCase();
-    if(id==="architectural")return Math.min(5,fl.famousArchitect?5:(b?.architect_style&&!/չճշտ/.test(String(b.architect_style))?4:3));
-    if(id==="architect")return fl.famousArchitect?5:0;
-    if(id==="historical")return fl.heritage?5:(parseInt(String(b?.year||""))&&parseInt(String(b.year))<1990?3:2);
-    if(id==="artistic")return fl.art?5:0;
-    if(id==="unique")return fl.unique?5:(b?.typical?3:2);
-    if(id==="typology")return b?.typical?4:3;
-    if(id==="functional")return /գործող|active|used/i.test(cond)?3:/կիս|partial/i.test(cond)?4:/լք|abandon|չգործ/i.test(cond)?5:2;
-    if(id==="modernization")return fl.needsModern?5:3;
-    if(id==="physical")return /լք|abandon|ruin|ավերվ|critical/i.test(cond)?5:/վերանորոգ|repair|poor|bad/i.test(cond)?4:3;
-    if(id==="adaptation")return (b?.area||b?.floors||b?.typical)?4:3;
-    if(id==="social")return b?.current_use||b?.usage?4:3;
-    if(id==="local")return 3;
-    if(id==="geographic")return fl.border?5:(fl.mountain?4:3);
-    if(id==="border")return fl.border?5:0;
-    if(id==="urbanism")return fl.urban?4:3;
-    if(id==="context")return fl.heritage||fl.art?4:3;
-    if(id==="territory")return (b?.lat&&b?.lng)?4:3;
-    if(id==="tourism")return touristPlaces.has(String(b?.settlement||""))?5:2;
-    if(id==="identity")return fl.heritage||fl.art?4:3;
-    if(id==="research")return Math.min(5,(b?.lat&&b?.lng?1:0)+(Array.isArray(b?.photos)&&b.photos.length?2:1)+(b?.source||b?.notes?2:1));
-    return 0;
+
+  function scoreMap(b){
+    const id=keyFor(b),over=state.manualScores[id]||{},out={};
+    CRITERIA.forEach(([key])=>out[key]=over[key]!==undefined?Math.max(0,Math.min(5,Number(over[key]))):null);
+    return out;
   }
-  function scoreMap(b){const id=keyFor(b),over=state.manualScores[id]||{},out={};CRITERIA.forEach(([key])=>{out[key]=over[key]!==undefined?Math.max(0,Math.min(5,Number(over[key]))):Math.max(0,Math.min(5,Number(autoScore(b,key))));});return out;}
-  function totalScore(b){const s=scoreMap(b);const weightSum=CRITERIA.reduce((a,x)=>a+x[2],0);const weighted=CRITERIA.reduce((a,[key,,weight])=>a+(Number(s[key]||0)*weight),0);return Math.round(weighted/weightSum*20);}
-  function selectedManual(b){return !!state.manualScores[keyFor(b)]||!!state.manualFlags[keyFor(b)];}
-  function currentFilters(){const f={search:(q("selectionSearch").value||"").trim().toLowerCase(),region:q("selectionRegion").value||"",condition:q("selectionCondition").value||""};document.querySelectorAll("[data-selection-flag]:checked").forEach(el=>f[el.dataset.selectionFlag]=true);return f;}
-  function qualify(b){const f=currentFilters(),score=totalScore(b),hay=textOf(b).toLowerCase();if(f.search&&!hay.includes(f.search))return false;if(f.region&&String(b.region||"")!==f.region)return false;if(f.condition&&String(b.condition||"")!==f.condition)return false;const fm=flagMap(b);for(const flag of FLAGS.map(x=>x[0]))if(f[flag]&&!fm[flag])return false;return score>=state.minScore;}
-  function populateFilters(){const rs=[...new Set(data().map(x=>x.region).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));const cs=[...new Set(data().map(x=>x.condition).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));const r=q("selectionRegion"),cc=q("selectionCondition"),rv=r.value,cv=cc.value;r.innerHTML='<option value="">ALL MARZES</option>'+rs.map(x=>'<option value="'+safe(x)+'">'+safe(x)+'</option>').join("");cc.innerHTML='<option value="">ALL CONDITIONS</option>'+cs.map(x=>'<option value="'+safe(x)+'">'+safe(x)+'</option>').join("");r.value=rs.includes(rv)?rv:"";cc.value=cs.includes(cv)?cv:"";}
-  function candidateList(){let arr=data().filter(qualify);if(state.sort==="region")arr.sort((a,b)=>String(a.region||"").localeCompare(String(b.region||""))||totalScore(b)-totalScore(a));else if(state.sort==="name")arr.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""))||totalScore(b)-totalScore(a));else arr.sort((a,b)=>totalScore(b)-totalScore(a));return arr;}
-  function chooseRepresentative(pool,n){const selected=[],used=new Set(),targets=state.targets.slice(),sorted=[...pool].sort((a,b)=>totalScore(b)-totalScore(a)),uncovered=new Set(targets);while(selected.length<n&&sorted.length){let best=null,bestBenefit=-Infinity;for(const b of sorted){const id=keyFor(b);if(used.has(id))continue;const flags=flagMap(b),cover=targets.filter(t=>uncovered.has(t)&&flags[t]).length,benefit=totalScore(b)+cover*8;if(best===null||benefit>bestBenefit){best=b;bestBenefit=benefit;}}if(!best)break;selected.push(best);used.add(keyFor(best));const flags=flagMap(best);targets.forEach(t=>{if(flags[t])uncovered.delete(t);});}return selected.slice(0,n);}
-  function renderCoverage(selected){const cov=state.targets.map(id=>{const found=FLAGS.find(x=>x[0]===id);return {id:id,label:found?found[1]:id,covered:selected.some(b=>flagMap(b)[id])};});const covered=cov.filter(x=>x.covered).length,total=cov.length;q("selectionCoverageNumber").textContent=total?covered+"/"+total:"—";q("selectionCoverageSummary").textContent=covered+" target categor"+(covered===1?"y":"ies")+" covered";q("selectionCoverageGrid").innerHTML=cov.map(x=>'<div class="selection-coverage-item '+(x.covered?"covered":"missing")+'">'+(x.covered?"✓ ":"× ")+safe(x.label)+'</div>').join("");}
-  function reasonFor(b){const sm=scoreMap(b),flags=flagMap(b),high=CRITERIA.map(([k,label,weight])=>[label,sm[k],weight]).sort((a,b)=>(b[1]*b[2])-(a[1]*a[2])).slice(0,3).filter(x=>x[1]>=4),cats=TARGET_IDS.filter(id=>flags[id]).map(id=>(FLAGS.find(x=>x[0]===id)||["",id])[1]);const lead=high.length?high.map(x=>x[0]).join(", "):"balanced research profile";return "High-value profile driven by "+lead+"."+(cats.length?" It also represents "+cats.join(", ")+"."+ "":"");}
-  function render(){if(!q("selectionResults"))return;populateFilters();const pool=candidateList();q("selectionTotalObjects").textContent=data().length;q("selectionQualified").textContent=pool.length;q("selectionCount").textContent=pool.length+" OBJECTS";state.selected=state.selected.filter(id=>pool.some(b=>keyFor(b)===id));const chosen=state.selected.map(id=>pool.find(b=>keyFor(b)===id)).filter(Boolean);q("selectionSelected").textContent=chosen.length;q("selectionAverage").textContent=chosen.length?Math.round(chosen.reduce((s,b)=>s+totalScore(b),0)/chosen.length):"—";const box=q("selectionResults");q("selectionViewSelected").classList.toggle("active",state.viewMode==="selected");q("selectionViewAll").classList.toggle("active",state.viewMode==="all");if(!pool.length){box.innerHTML='<div class="selection-empty">NO OBJECTS MATCH THE CURRENT FILTERS.</div>';renderCoverage([]);return;}const displayList=state.viewMode==="selected"&&chosen.length?chosen:pool.slice(0,50);box.innerHTML=displayList.map(b=>{const id=keyFor(b),score=totalScore(b),flags=flagMap(b),isSel=state.selected.includes(id),manual=selectedManual(b),sm=scoreMap(b),mod=Math.round((sm.modernization+sm.adaptation)/2),local=sm.local,arch=sm.architectural,tags=TARGET_IDS.filter(t=>flags[t]).map(t=>'<span class="selection-tag">'+safe((FLAGS.find(x=>x[0]===t)||["",t])[1])+'</span>').slice(0,4).join("");return '<article class="selection-card '+(isSel?"is-selected":"")+'">'+(manual?'':'<span class="selection-auto">AUTO DRAFT</span>')+'<div class="selection-card-head"><div><div class="selection-card-name">'+safe(b.name||b.settlement||"CULTURAL HOUSE")+'</div><div class="selection-card-place">'+safe([b.region,b.settlement||b.community].filter(Boolean).join(" · "))+'</div></div><div class="selection-score">'+score+'<small>/100</small></div></div><div class="selection-progress"><span style="width:'+score+'%"></span></div><div class="selection-tags">'+(tags||'<span class="selection-tag warn">NO TARGET CATEGORY</span>')+'</div><div class="selection-reason">'+safe(reasonFor(b))+'</div><div class="selection-card-meta"><div class="selection-mini"><b>'+mod+'/5</b><span>MODERNIZATION</span></div><div class="selection-mini"><b>'+local+'/5</b><span>LOCAL VALUE</span></div><div class="selection-mini"><b>'+arch+'/5</b><span>ARCHITECTURE</span></div></div><div class="selection-card-actions"><button class="btn '+(isSel?"dark":"")+'" type="button" data-select-object="'+safe(id)+'">'+(isSel?"SELECTED":"SELECT")+'</button>'+((typeof adminUser!=="undefined"&&adminUser)?'<button class="btn" type="button" data-edit-selection="'+safe(id)+'">EDIT CRITERIA</button>':"")+'</div></article>';}).join("");renderCoverage(chosen);box.querySelectorAll("[data-select-object]").forEach(btn=>btn.onclick=()=>{const id=String(btn.dataset.selectObject);state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];state.viewMode="selected";persistLight();render();});box.querySelectorAll("[data-edit-selection]").forEach(btn=>btn.onclick=()=>openEditor(btn.dataset.editSelection));}
-  function autoSelect(){const chosen=chooseRepresentative(candidateList(),state.count);state.selected=chosen.map(keyFor);state.viewMode="selected";persistLight();render();}
-  function fillEditor(b){const sm=scoreMap(b);q("selectionEditorFields").innerHTML=CRITERIA.map(([key,label,weight])=>'<div class="selection-score-field"><label>'+safe(label)+' <span style="float:right;color:var(--muted)">'+weight+'% weight</span></label><select data-score-key="'+key+'">'+[0,1,2,3,4,5].map(n=>'<option value="'+n+'" '+(n===sm[key]?"selected":"")+'>'+n+' / 5</option>').join("")+'</select></div>').join("");const flags=flagMap(b);q("selectionEditorFlags").innerHTML=FLAGS.map(([key,label])=>'<label><input type="checkbox" data-editor-flag="'+key+'" '+(flags[key]?"checked":"")+'>'+safe(label)+'</label>').join("");q("selectionEditorTotal").textContent=totalScore(b)+"/100";}function openEditor(id){const b=data().find(x=>keyFor(x)===String(id));if(!b)return;editingId=String(id);q("selectionEditorTitle").textContent=b.name||b.settlement||"EDIT CRITERIA";fillEditor(b);q("selectionEditorOverlay").style.display="flex";}
-  function saveEditor(){const b=data().find(x=>keyFor(x)===editingId);if(!b)return;const vals={};q("selectionEditorFields").querySelectorAll("[data-score-key]").forEach(el=>vals[el.dataset.scoreKey]=Number(el.value));const flags={};q("selectionEditorFlags").querySelectorAll("[data-editor-flag]").forEach(el=>flags[el.dataset.editorFlag]=!!el.checked);state.manualScores[editingId]=vals;state.manualFlags[editingId]=flags;settings.content=settings.content||{};settings.content.selection={...(settings.content.selection||{}),manualScores:state.manualScores,manualFlags:state.manualFlags,targets:state.targets,minScore:state.minScore,defaultCount:state.count,sort:state.sort,savedAt:new Date().toISOString()};try{localStorage.setItem("dk_settings_v9",JSON.stringify(settings));localStorage.setItem("dk_settings_dirty_v1","1");if(typeof markLocalWorkspaceDirty==="function")markLocalWorkspaceDirty();if(typeof saveCloudSettings==="function"&&(typeof adminUser!=="undefined"&&adminUser)&&typeof cloudReady!=="undefined"&&cloudReady){clearTimeout(window._dkSelectionCloudTimer);window._dkSelectionCloudTimer=setTimeout(()=>saveCloudSettings(),300);}}catch(e){console.warn("Selection criteria save failed",e);}q("selectionEditorOverlay").style.display="none";render();}
-  function loadConfig(){const cfg=settings?.content?.selection||{};if(cfg.manualScores&&typeof cfg.manualScores==="object")state.manualScores=cfg.manualScores;if(cfg.manualFlags&&typeof cfg.manualFlags==="object")state.manualFlags=cfg.manualFlags;if(Array.isArray(cfg.targets)&&cfg.targets.length)state.targets=cfg.targets;if(Number.isFinite(+cfg.minScore))state.minScore=+cfg.minScore;if(Number.isFinite(+cfg.defaultCount)&&[5,8,10].includes(+cfg.defaultCount))state.count=+cfg.defaultCount;if(cfg.sort)state.sort=cfg.sort;if(Array.isArray(cfg.selected))state.selected=cfg.selected.map(String);state.viewMode=state.selected.length?"selected":"all";if(q("selectionMinScore")){q("selectionMinScore").value=String(state.minScore);q("selectionMinScoreValue").textContent=String(state.minScore);}document.querySelectorAll("[data-selection-target]").forEach(el=>el.checked=state.targets.includes(el.dataset.selectionTarget));document.querySelectorAll(".selection-count-btn").forEach(el=>el.classList.toggle("active",+el.dataset.selectionCount===state.count));}
-  function persistLight(){settings.content=settings.content||{};settings.content.selection={...(settings.content.selection||{}),targets:state.targets,minScore:state.minScore,defaultCount:state.count,sort:state.sort,manualScores:state.manualScores,manualFlags:state.manualFlags,selected:state.selected};try{localStorage.setItem("dk_settings_v9",JSON.stringify(settings));localStorage.setItem("dk_settings_dirty_v1","1");}catch(e){}}
-  function bind(){if(initialized)return;initialized=true;loadConfig();document.querySelectorAll(".selection-count-btn").forEach(btn=>btn.onclick=()=>{state.count=+btn.dataset.selectionCount;document.querySelectorAll(".selection-count-btn").forEach(x=>x.classList.toggle("active",x===btn));state.selected=[];state.viewMode="all";persistLight();render();});q("selectionAutoBtn").onclick=autoSelect;q("selectionViewSelected").onclick=()=>{state.viewMode="selected";render();};q("selectionViewAll").onclick=()=>{state.viewMode="all";render();};q("selectionSearch").oninput=()=>{state.selected=[];state.viewMode="all";render();};q("selectionRegion").onchange=()=>{state.selected=[];state.viewMode="all";render();};q("selectionCondition").onchange=()=>{state.selected=[];state.viewMode="all";render();};q("selectionSort").onchange=e=>{state.sort=e.target.value;persistLight();render();};q("selectionMinScore").oninput=e=>{state.minScore=+e.target.value;q("selectionMinScoreValue").textContent=e.target.value;state.selected=[];persistLight();render();};document.querySelectorAll("[data-selection-flag]").forEach(el=>el.onchange=()=>{state.selected=[];state.viewMode="all";render();});document.querySelectorAll("[data-selection-target]").forEach(el=>el.onchange=()=>{state.targets=[...document.querySelectorAll("[data-selection-target]:checked")].map(x=>x.dataset.selectionTarget);state.selected=[];state.viewMode="all";persistLight();render();});q("closeSelectionEditor").onclick=()=>q("selectionEditorOverlay").style.display="none";q("cancelSelectionEdit").onclick=()=>q("selectionEditorOverlay").style.display="none";q("saveSelectionEdit").onclick=saveEditor;q("selectionEditorOverlay").addEventListener("click",e=>{if(e.target===q("selectionEditorOverlay"))q("selectionEditorOverlay").style.display="none";});q("selectionSort").value=state.sort;render();}
-  function boot(){if(!q("selection"))return;if(typeof settings!=="undefined")loadConfig();bind();render();setTimeout(render,1800);}
+
+  function assessedCount(b){
+    return Object.values(scoreMap(b)).filter(v=>v!==null).length;
+  }
+
+  function isFullyAssessed(b){
+    return assessedCount(b)===CRITERIA.length;
+  }
+
+  function totalScore(b){
+    if(!isFullyAssessed(b))return null;
+    const s=scoreMap(b);
+    const weightSum=CRITERIA.reduce((a,x)=>a+x[2],0);
+    const weighted=CRITERIA.reduce((a,[key,,weight])=>a+(Number(s[key]||0)*weight),0);
+    return Math.round(weighted/(weightSum*5)*100);
+  }
+
+  function selectedManual(b){
+    const id=keyFor(b);
+    return !!state.manualScores[id]||!!state.manualFlags[id];
+  }
+
+  function currentFilters(){
+    const f={
+      search:(q("selectionSearch")?.value||"").trim().toLowerCase(),
+      region:q("selectionRegion")?.value||"",
+      condition:q("selectionCondition")?.value||""
+    };
+    document.querySelectorAll("[data-selection-flag]:checked").forEach(el=>f[el.dataset.selectionFlag]=true);
+    return f;
+  }
+
+  function filteredList(){
+    const f=currentFilters();
+    return data().filter(b=>{
+      const hay=textOf(b).toLowerCase();
+      if(f.search&&!hay.includes(f.search))return false;
+      if(f.region&&String(b.region||"")!==f.region)return false;
+      if(f.condition&&String(b.condition||"")!==f.condition)return false;
+      const fm=flagMap(b);
+      for(const flag of FLAGS.map(x=>x[0]))if(f[flag]&&!fm[flag])return false;
+      return true;
+    });
+  }
+
+  function candidateList(){
+    let arr=filteredList().filter(isFullyAssessed).filter(b=>totalScore(b)>=state.minScore);
+    if(state.sort==="region")arr.sort((a,b)=>String(a.region||"").localeCompare(String(b.region||""))||totalScore(b)-totalScore(a));
+    else if(state.sort==="name")arr.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""))||totalScore(b)-totalScore(a));
+    else arr.sort((a,b)=>totalScore(b)-totalScore(a));
+    return arr;
+  }
+
+  function chooseRepresentative(pool,n){
+    const selected=[],used=new Set(),targets=state.targets.slice(),sorted=[...pool].sort((a,b)=>totalScore(b)-totalScore(a)),uncovered=new Set(targets);
+    while(selected.length<n&&sorted.length){
+      let best=null,bestBenefit=-Infinity;
+      for(const b of sorted){
+        const id=keyFor(b);
+        if(used.has(id))continue;
+        const flags=flagMap(b);
+        const cover=targets.filter(t=>uncovered.has(t)&&flags[t]).length;
+        const benefit=totalScore(b)+cover*8;
+        if(best===null||benefit>bestBenefit){best=b;bestBenefit=benefit;}
+      }
+      if(!best)break;
+      selected.push(best);used.add(keyFor(best));
+      const flags=flagMap(best);
+      targets.forEach(t=>{if(flags[t])uncovered.delete(t);});
+    }
+    return selected.slice(0,n);
+  }
+
+  function populateFilters(){
+    const rs=[...new Set(data().map(x=>x.region).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));
+    const cs=[...new Set(data().map(x=>x.condition).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));
+    const r=q("selectionRegion"),cc=q("selectionCondition");
+    if(!r||!cc)return;
+    const rv=r.value,cv=cc.value;
+    r.innerHTML='<option value="">ALL MARZES</option>'+rs.map(x=>'<option value="'+safe(x)+'">'+safe(x)+'</option>').join("");
+    cc.innerHTML='<option value="">ALL CONDITIONS</option>'+cs.map(x=>'<option value="'+safe(x)+'">'+safe(x)+'</option>').join("");
+    r.value=rs.includes(rv)?rv:"";cc.value=cs.includes(cv)?cv:"";
+  }
+
+  function reasonFor(b){
+    const sm=scoreMap(b),flags=flagMap(b);
+    const high=CRITERIA.map(([k,label,weight])=>[label,sm[k],weight]).sort((a,b)=>(b[1]*b[2])-(a[1]*a[2])).slice(0,3).filter(x=>x[1]>=4);
+    const cats=TARGET_IDS.filter(id=>flags[id]).map(id=>(FLAGS.find(x=>x[0]===id)||["",id])[1]);
+    const lead=high.length?high.map(x=>x[0]).join(", "):"the complete research profile";
+    return "Selected because of "+lead+"."+(cats.length?" It also represents "+cats.join(", ")+".":"");
+  }
+
+  function coverage(selected){
+    return state.targets.map(id=>{
+      const found=FLAGS.find(x=>x[0]===id);
+      return {id,label:found?found[1]:id,covered:selected.some(b=>flagMap(b)[id])};
+    });
+  }
+
+  function renderCoverage(selected){
+    const cov=coverage(selected),covered=cov.filter(x=>x.covered).length,total=cov.length;
+    q("selectionCoverageNumber").textContent=total?covered+"/"+total:"—";
+    q("selectionCoverageSummary").textContent=covered+" target categor"+(covered===1?"y":"ies")+" covered";
+    q("selectionCoverageGrid").innerHTML=cov.map(x=>'<div class="selection-coverage-item '+(x.covered?"covered":"missing")+'">'+(x.covered?"✓ ":"× ")+safe(x.label)+'</div>').join("");
+  }
+
+  function render(){
+    if(!q("selectionResults"))return;
+    populateFilters();
+    const allPool=filteredList(),eligible=candidateList();
+
+    q("selectionTotalObjects").textContent=data().length;
+    q("selectionQualified").textContent=data().filter(isFullyAssessed).length;
+    q("selectionCount").textContent=eligible.length+" ELIGIBLE";
+    state.selected=state.selected.filter(id=>allPool.some(b=>keyFor(b)===id)&&isFullyAssessed(allPool.find(b=>keyFor(b)===id)));
+    const chosen=state.selected.map(id=>allPool.find(b=>keyFor(b)===id)).filter(Boolean);
+    q("selectionSelected").textContent=chosen.length;
+    q("selectionAverage").textContent=chosen.length?Math.round(chosen.reduce((s,b)=>s+totalScore(b),0)/chosen.length):"—";
+
+    q("selectionViewSelected").classList.toggle("active",state.viewMode==="selected");
+    q("selectionViewAll").classList.toggle("active",state.viewMode==="all");
+
+    const box=q("selectionResults");
+    if(state.viewMode==="selected"&&!chosen.length){
+      box.innerHTML='<div class="selection-empty"><b>NO PROJECT SELECTION YET.</b><br><br>Open <b>ALL CANDIDATES</b>, assess the objects manually, then use <b>FORM SELECTION</b> to build the 5 / 8 / 10-object shortlist.</div>';
+      renderCoverage([]);
+      return;
+    }
+    const displayList=state.viewMode==="selected"?chosen:allPool;
+    if(!displayList.length){
+      box.innerHTML='<div class="selection-empty">NO OBJECTS MATCH THE CURRENT FILTERS.</div>';
+      renderCoverage([]);
+      return;
+    }
+
+    box.innerHTML=displayList.map(b=>{
+      const id=keyFor(b),score=totalScore(b),flags=flagMap(b),isSel=state.selected.includes(id),manual=selectedManual(b),assessed=assessedCount(b);
+      const tags=TARGET_IDS.filter(t=>flags[t]).map(t=>'<span class="selection-tag">'+safe((FLAGS.find(x=>x[0]===t)||["",t])[1])+'</span>').slice(0,5).join("");
+      const sm=scoreMap(b);
+      const mod=sm.modernization===null?"—":Math.round(((sm.modernization||0)+(sm.adaptation||0))/2);
+      const local=sm.local===null?"—":sm.local;
+      const arch=sm.architectural===null?"—":sm.architectural;
+      const reason=score===null?(assessed===0?"Not assessed yet.":("Assessment in progress: "+assessed+"/"+CRITERIA.length+" criteria completed.")):reasonFor(b);
+      const scoreHtml=score===null?'—<small>/100</small>':score+'<small>/100</small>';
+      const badge=score===null?'<span class="selection-unassessed">'+assessed+'/'+CRITERIA.length+' ASSESSED</span>':'<span class="selection-auto">VERIFIED</span>';
+      const selectBtn=score!==null?'<button class="btn '+(isSel?"dark":"")+'" type="button" data-select-object="'+safe(id)+'">'+(isSel?"SELECTED":"SELECT")+'</button>':'<button class="btn" type="button" disabled>ASSESS FIRST</button>';
+      const editBtn=(typeof adminUser!=="undefined"&&adminUser)?'<button class="btn" type="button" data-edit-selection="'+safe(id)+'">EDIT CRITERIA</button>':"";
+      return '<article class="selection-card '+(isSel?"is-selected":"")+'">'+badge+
+        '<div class="selection-card-head"><div><div class="selection-card-name">'+safe(b.name||b.settlement||"CULTURAL HOUSE")+'</div><div class="selection-card-place">'+safe([b.region,b.settlement||b.community].filter(Boolean).join(" · "))+'</div></div><div class="selection-score">'+scoreHtml+'</div></div>'+
+        '<div class="selection-progress '+(score===null?"missing":"")+'"><span style="width:'+(score===null?(assessed/CRITERIA.length*100):score)+'%"></span></div>'+
+        '<div class="selection-assessment">'+(assessed===CRITERIA.length?"20/20 CRITERIA ASSESSED":"ASSESSMENT "+assessed+"/"+CRITERIA.length)+'</div>'+
+        '<div class="selection-tags">'+(tags||'<span class="selection-tag warn">CATEGORY FLAGS NOT SET</span>')+'</div>'+
+        '<div class="selection-reason">'+safe(reason)+'</div>'+
+        '<div class="selection-card-meta"><div class="selection-mini"><b>'+mod+'/5</b><span>MODERNIZATION</span></div><div class="selection-mini"><b>'+local+'/5</b><span>LOCAL VALUE</span></div><div class="selection-mini"><b>'+arch+'/5</b><span>ARCHITECTURE</span></div></div>'+
+        '<div class="selection-card-actions">'+selectBtn+editBtn+'</div></article>';
+    }).join("");
+
+    renderCoverage(chosen);
+
+    box.querySelectorAll("[data-select-object]").forEach(btn=>btn.onclick=()=>{
+      const id=String(btn.dataset.selectObject);
+      state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];
+      state.viewMode="selected";persistLight();render();
+    });
+    box.querySelectorAll("[data-edit-selection]").forEach(btn=>btn.onclick=()=>openEditor(btn.dataset.editSelection));
+  }
+
+  function autoSelect(){
+    const pool=candidateList();
+    if(!pool.length){
+      state.selected=[];state.viewMode="selected";render();
+      alert("No fully assessed objects are available yet. Assess the objects manually in ALL CANDIDATES.");
+      return;
+    }
+    const chosen=chooseRepresentative(pool,state.count);
+    state.selected=chosen.map(keyFor);
+    state.viewMode="selected";
+    persistLight();
+    render();
+    if(chosen.length<state.count)alert("Only "+chosen.length+" fully assessed objects are currently eligible. Assess more objects to build a larger shortlist.");
+  }
+
+  function fillEditor(b){
+    const sm=scoreMap(b);
+    q("selectionEditorFields").innerHTML=CRITERIA.map(([key,label,weight])=>{
+      return '<div class="selection-score-field"><label>'+safe(label)+' <span style="float:right;color:var(--muted)">'+weight+'%</span></label><select data-score-key="'+key+'"><option value="">— / NOT ASSESSED</option>'+[0,1,2,3,4,5].map(n=>'<option value="'+n+'" '+(sm[key]===n?"selected":"")+'>'+n+' / 5</option>').join("")+'</select></div>';
+    }).join("");
+    const flags=flagMap(b);
+    q("selectionEditorFlags").innerHTML=FLAGS.map(([key,label])=>'<label><input type="checkbox" data-editor-flag="'+key+'" '+(flags[key]?"checked":"")+'>'+safe(label)+'</label>').join("");
+    q("selectionEditorTotal").textContent=(totalScore(b)===null?"—":totalScore(b))+"/100";
+  }
+
+  function openEditor(id){
+    const b=data().find(x=>keyFor(x)===String(id));if(!b)return;
+    editingId=String(id);
+    q("selectionEditorTitle").textContent=b.name||b.settlement||"EDIT CRITERIA";
+    q("selectionEditorSub").textContent="Manual assessment · "+assessedCount(b)+"/"+CRITERIA.length+" criteria completed. Each criterion is scored 0–5.";
+    fillEditor(b);
+    q("selectionEditorOverlay").style.display="flex";
+  }
+
+  function saveEditor(){
+    const b=data().find(x=>keyFor(x)===editingId);if(!b)return;
+    const vals={};
+    q("selectionEditorFields").querySelectorAll("[data-score-key]").forEach(el=>{if(el.value!=="")vals[el.dataset.scoreKey]=Number(el.value);});
+    const flags={};
+    q("selectionEditorFlags").querySelectorAll("[data-editor-flag]").forEach(el=>flags[el.dataset.editorFlag]=!!el.checked);
+
+    state.manualScores[editingId]=vals;
+    state.manualFlags[editingId]=flags;
+
+    settings.content=settings.content||{};
+    settings.content.selection={
+      ...(settings.content.selection||{}),
+      manualScores:state.manualScores,
+      manualFlags:state.manualFlags,
+      targets:state.targets,
+      minScore:state.minScore,
+      defaultCount:state.count,
+      sort:state.sort,
+      selected:state.selected,
+      savedAt:new Date().toISOString()
+    };
+
+    try{
+      localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
+      localStorage.setItem("dk_settings_dirty_v1","1");
+      if(typeof markLocalWorkspaceDirty==="function")markLocalWorkspaceDirty();
+      if(typeof saveCloudSettings==="function"&&(typeof adminUser!=="undefined"&&adminUser)&&typeof cloudReady!=="undefined"&&cloudReady){
+        clearTimeout(window._dkSelectionCloudTimer);
+        window._dkSelectionCloudTimer=setTimeout(()=>saveCloudSettings(),300);
+      }
+    }catch(e){console.warn("Selection criteria save failed",e);}
+
+    q("selectionEditorOverlay").style.display="none";
+    render();
+  }
+
+  function persistLight(){
+    settings.content=settings.content||{};
+    settings.content.selection={
+      ...(settings.content.selection||{}),
+      targets:state.targets,
+      minScore:state.minScore,
+      defaultCount:state.count,
+      sort:state.sort,
+      manualScores:state.manualScores,
+      manualFlags:state.manualFlags,
+      selected:state.selected
+    };
+    try{
+      localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
+      localStorage.setItem("dk_settings_dirty_v1","1");
+    }catch(e){}
+  }
+
+  function loadConfig(){
+    const cfg=settings?.content?.selection||{};
+    if(cfg.manualScores&&typeof cfg.manualScores==="object")state.manualScores=cfg.manualScores;
+    if(cfg.manualFlags&&typeof cfg.manualFlags==="object")state.manualFlags=cfg.manualFlags;
+    if(Array.isArray(cfg.targets)&&cfg.targets.length)state.targets=cfg.targets;
+    if(Number.isFinite(+cfg.minScore))state.minScore=+cfg.minScore;
+    if(Number.isFinite(+cfg.defaultCount)&&[5,8,10].includes(+cfg.defaultCount))state.count=+cfg.defaultCount;
+    if(cfg.sort)state.sort=cfg.sort;
+    if(Array.isArray(cfg.selected))state.selected=cfg.selected.map(String);
+    state.viewMode=state.selected.length?"selected":"selected";
+    if(q("selectionMinScore")){q("selectionMinScore").value=String(state.minScore);q("selectionMinScoreValue").textContent=String(state.minScore);}
+    document.querySelectorAll("[data-selection-target]").forEach(el=>el.checked=state.targets.includes(el.dataset.selectionTarget));
+    document.querySelectorAll(".selection-count-btn").forEach(el=>el.classList.toggle("active",+el.dataset.selectionCount===state.count));
+  }
+
+  function bind(){
+    if(initialized)return;
+    initialized=true;
+    loadConfig();
+
+    document.querySelectorAll(".selection-count-btn").forEach(btn=>btn.onclick=()=>{
+      state.count=+btn.dataset.selectionCount;
+      document.querySelectorAll(".selection-count-btn").forEach(x=>x.classList.toggle("active",x===btn));
+      state.selected=[];state.viewMode="selected";persistLight();render();
+    });
+
+    q("selectionAutoBtn").onclick=autoSelect;
+    q("selectionViewSelected").onclick=()=>{state.viewMode="selected";render();};
+    q("selectionViewAll").onclick=()=>{state.viewMode="all";render();};
+
+    q("selectionSearch").oninput=()=>{state.selected=[];state.viewMode="all";render();};
+    q("selectionRegion").onchange=()=>{state.selected=[];state.viewMode="all";render();};
+    q("selectionCondition").onchange=()=>{state.selected=[];state.viewMode="all";render();};
+    q("selectionSort").onchange=e=>{state.sort=e.target.value;persistLight();render();};
+
+    q("selectionMinScore").oninput=e=>{
+      state.minScore=+e.target.value;
+      q("selectionMinScoreValue").textContent=e.target.value;
+      state.selected=[];persistLight();render();
+    };
+
+    document.querySelectorAll("[data-selection-flag]").forEach(el=>el.onchange=()=>{
+      state.selected=[];state.viewMode="all";render();
+    });
+
+    document.querySelectorAll("[data-selection-target]").forEach(el=>el.onchange=()=>{
+      state.targets=[...document.querySelectorAll("[data-selection-target]:checked")].map(x=>x.dataset.selectionTarget);
+      state.selected=[];persistLight();render();
+    });
+
+    q("closeSelectionEditor").onclick=()=>q("selectionEditorOverlay").style.display="none";
+    q("cancelSelectionEdit").onclick=()=>q("selectionEditorOverlay").style.display="none";
+    q("saveSelectionEdit").onclick=saveEditor;
+    q("selectionEditorOverlay").addEventListener("click",e=>{if(e.target===q("selectionEditorOverlay"))q("selectionEditorOverlay").style.display="none";});
+    q("selectionSort").value=state.sort;
+    render();
+  }
+
+  function boot(){
+    if(!q("selection"))return;
+    bind();
+    render();
+    setTimeout(render,1800);
+  }
+
   window.renderSelection=render;
   document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,500));
 })();
