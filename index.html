@@ -1728,16 +1728,29 @@ async function bootstrapCloudIfEmpty(){
   try{
     const {count,error}=await supabaseClient.from("buildings").select("id",{count:"exact",head:true});
     if(error)throw error;
-    if(Number(count||0)>0){
-      cloudReady=true;
-      cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
-      return {ok:true,already:true,count:Number(count)};
-    }
-    // The project currently has an empty buildings table. Publish the local
-    // 96-object archive once, then all future edits use normal per-object sync.
     cloudReady=true;
-    const result=await syncAllToCloud();
-    return result;
+
+    // IMPORTANT: if the browser has unsynced edits, those edits are the
+    // source of truth and must be published even when the cloud already
+    // contains records. Previously this branch returned early and silently
+    // abandoned local changes.
+    const localArchiveDirty=localStorage.getItem("dk_archive_dirty_v1")==="1";
+    const localSettingsDirty=localStorage.getItem("dk_settings_dirty_v1")==="1";
+    const localWorkspaceDirty=localStorage.getItem("dk_workspace_dirty_v1")==="1";
+
+    if(Number(count||0)===0 || localArchiveDirty){
+      const result=await syncAllToCloud();
+      if(!result.ok)return result;
+    }
+
+    if(localSettingsDirty || localWorkspaceDirty || Number(count||0)===0){
+      const settingsResult=await saveCloudSettings();
+      if(!settingsResult.ok)return settingsResult;
+    }
+
+    const freshCount=Number(count||0)>0 ? Number(count) : db.length;
+    cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
+    return {ok:true,already:Number(count||0)>0,count:freshCount};
   }catch(err){
     console.error("Cloud bootstrap failed",err);
     cloudReady=false;
