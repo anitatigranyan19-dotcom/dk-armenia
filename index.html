@@ -994,10 +994,68 @@ header .brand{font-weight:600;letter-spacing:.08em}
 #settingsOverlay .field input,#settingsOverlay .field select,#settingsOverlay .field textarea{border-radius:0}
 @media(max-width:900px){.hero-title{font-size:clamp(48px,14vw,96px)}}
 </style></style>
+
+<style id="selection-module-style">
+.selection-module{padding-top:56px}
+.selection-head{display:flex;justify-content:space-between;align-items:end;gap:28px;border-bottom:1px solid var(--line);padding-bottom:22px}
+.selection-title-row{display:flex;align-items:baseline;gap:16px;margin-top:7px}.selection-title{font-size:52px;font-weight:400;letter-spacing:-.04em}
+.selection-intro{max-width:560px;font-size:12px;line-height:1.6;color:var(--muted);margin-top:10px}
+.selection-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.selection-summary{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.selection-metric{padding:17px 18px;border-right:1px solid var(--line);min-height:82px;display:flex;flex-direction:column;justify-content:space-between}
+.selection-metric:last-child{border-right:0}.selection-metric b{font-size:29px;font-weight:400}.selection-metric span{font-size:8px;letter-spacing:.13em;color:var(--muted)}
+.selection-workspace{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;margin-top:24px}
+.selection-sidebar{border-right:1px solid var(--line);padding-right:24px}
+.selection-sidebar .small{display:block;margin-bottom:8px}
+.selection-field{padding:14px 0;border-bottom:1px solid var(--line)}
+.selection-field label{display:block;font-size:8px;letter-spacing:.12em;color:var(--muted);margin-bottom:8px}
+.selection-field input[type=text],.selection-field select{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:9px 0;font:inherit;font-size:11px;outline:none;color:var(--ink)}
+.selection-checks{display:grid;gap:7px}.selection-checks label{display:flex;align-items:center;gap:8px;margin:0;color:var(--ink);font-size:10px;letter-spacing:.03em;text-transform:none}
+.selection-checks input{margin:0}
+.selection-score-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.selection-score-row input{width:100%}.selection-score-value{font-size:12px;font-weight:600;min-width:28px;text-align:right}
+.selection-targets{margin-top:24px;border-top:1px solid var(--line);padding-top:18px}.selection-target-list{display:grid;gap:6px;margin-top:10px}
+.selection-target{display:flex;align-items:center;gap:8px;font-size:9px;color:var(--muted)}.selection-target input{margin:0}
+.selection-results-head{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:14px}
+.selection-results-head .selection-sort{display:flex;gap:7px;align-items:center}
+.selection-results-head select{border:1px solid var(--line);background:transparent;padding:7px 9px;font-size:9px;color:var(--ink)}
+.selection-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.selection-card{border:1px solid var(--line);background:var(--paper);padding:16px;display:flex;flex-direction:column;gap:12px;position:relative}
+.selection-card.is-selected{outline:2px solid var(--ink)}
+.selection-card-head{display:flex;justify-content:space-between;gap:12px}
+.selection-card-name{font-size:18px;line-height:1.12}.selection-card-place{font-size:10px;color:var(--muted);margin-top:5px}
+.selection-score{font-size:27px;line-height:1;font-weight:500;white-space:nowrap}.selection-score small{font-size:11px;color:var(--muted);font-weight:400}
+.selection-progress{height:5px;background:#d2cec5;overflow:hidden}.selection-progress span{display:block;height:100%;background:var(--ink)}
+.selection-tags{display:flex;gap:5px;flex-wrap:wrap}.selection-tag{border:1px solid var(--line);padding:5px 7px;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.selection-tag.warn{border-color:#a86d00;color:#8b5b00}
+.selection-reason{padding:10px;background:rgba(247,245,240,.6);border-left:2px solid var(--ink);font-size:10px;line-height:1.55;color:var(--muted)}
+.selection-card-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.selection-mini{border-top:1px solid var(--line);padding-top:7px}
+.selection-mini b{display:block;font-size:11px;font-weight:500}.selection-mini span{display:block;font-size:7px;letter-spacing:.1em;color:var(--muted);margin-top:4px}
+.selection-card-actions{display:flex;gap:6px;margin-top:auto}.selection-card-actions .btn{flex:1}
+.selection-auto{font-size:7px;letter-spacing:.11em;color:#7b6b55;border:1px solid #c9bda9;padding:4px 6px;position:absolute;top:10px;right:10px;background:var(--paper)}
+.selection-coverage{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0;margin-top:22px}
+.selection-coverage-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.selection-coverage-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.selection-coverage-item{font-size:8px;padding:6px 8px;border:1px solid var(--line);color:var(--muted)}
+.selection-coverage-item.covered{border-color:#19724a;color:#19724a}.selection-coverage-item.missing{border-color:#a33;color:#a33}
+.selection-note{margin-top:15px;font-size:9px;line-height:1.55;color:var(--muted);max-width:820px}
+.selection-empty{border:1px dashed var(--line);padding:42px;text-align:center;color:var(--muted);font-size:10px}
+#selectionEditorOverlay .modal{max-width:1100px}
+.selection-editor-header{display:flex;justify-content:space-between;align-items:end;gap:18px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.selection-editor-sub{font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px}
+.selection-editor-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:18px}
+.selection-score-field{border:1px solid var(--line);background:var(--card);padding:11px}.selection-score-field label{display:block;font-size:9px;line-height:1.25;margin-bottom:8px;color:var(--muted)}
+.selection-score-field select{width:100%;border:1px solid var(--line);background:var(--paper);padding:7px;font:inherit;font-size:11px;color:var(--ink)}
+.selection-flag-box{margin-top:18px;border-top:1px solid var(--line);padding-top:15px}.selection-flag-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:9px}
+.selection-flag-grid label{display:flex;gap:7px;align-items:center;font-size:9px;color:var(--ink)}.selection-flag-grid input{margin:0}
+.selection-editor-footnote{margin-top:15px;font-size:9px;color:var(--muted);line-height:1.5}
+.selection-method{margin-top:26px;border-top:1px solid var(--line);padding-top:17px}.selection-method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
+.selection-method-card{border:1px solid var(--line);padding:13px}.selection-method-card b{font-size:10px}.selection-method-card p{font-size:9px;line-height:1.55;color:var(--muted);margin:7px 0 0}
+@media(max-width:1050px){.selection-workspace{grid-template-columns:1fr}.selection-sidebar{border-right:0;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:18px}.selection-results{grid-template-columns:1fr}.selection-summary{grid-template-columns:repeat(2,1fr)}.selection-metric:nth-child(2){border-right:0}.selection-metric:nth-child(n+3){border-top:1px solid var(--line)}.selection-metric:nth-child(4){border-right:0}.selection-flag-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.selection-head{display:block}.selection-actions{justify-content:flex-start;margin-top:15px}.selection-title{font-size:38px}.selection-summary{grid-template-columns:1fr 1fr}.selection-card-meta{grid-template-columns:1fr 1fr}.selection-editor-fields{grid-template-columns:1fr}.selection-flag-grid{grid-template-columns:1fr 1fr}.selection-method-grid{grid-template-columns:1fr}.selection-results-head{align-items:flex-start;flex-direction:column}}
+</style>
 </head>
 <body>
 <header><a class="brand" href="#" id="siteLogo">DK / ARMENIA</a><nav aria-label="Main navigation" class="nav">
-<a href="#catalog">CATALOG</a><a href="#map-section">MAP</a><a href="#routes">ROUTES</a><a href="#fieldwork">FIELDWORK</a><a href="#data">DATA</a><a href="#support">SUPPORT</a><a href="#about">ABOUT</a>
+<a href="#catalog">CATALOG</a><a href="#map-section">MAP</a><a href="#routes">ROUTES</a><a href="#fieldwork">FIELDWORK</a><a href="#data">DATA</a><a href="#selection">SELECTION</a><a href="#support">SUPPORT</a><a href="#about">ABOUT</a>
 </nav><div class="head"><span class="cloud-status" id="cloudStatus">CLOUD</span><button class="btn" id="settingsBtn">SETTINGS</button><button class="btn" id="adminBtn">ADMIN LOGIN</button><button class="btn" id="adminPanelBtn" style="display:none">ADMIN PANEL</button><button class="btn" id="backupBtn">BACKUP</button><button class="btn dark" id="addBtn">+ ADD</button></div></header>
 <section class="hero">
 <div class="hero-bg"></div>
@@ -1119,7 +1177,85 @@ header .brand{font-weight:600;letter-spacing:.08em}
 </div>
 <div class="source-list" id="sourceList"></div>
 </section>
-<div class="section-divider"><span>06 / SUPPORT</span></div>
+
+<div class="section-divider"><span>06 / SELECTION</span></div>
+<section class="section selection-module" id="selection">
+  <div class="selection-head">
+    <div>
+      <div class="small" id="selectionKicker">PROJECT SELECTION / RESEARCH METHOD</div>
+      <div class="selection-title-row"><div class="selection-title" id="selectionTitle">Selection for design</div><div class="catalog-count" id="selectionCount">0 OBJECTS</div></div>
+      <div class="selection-intro" id="selectionCopy">A transparent method for selecting 5–10 cultural houses for project development from the full research database.</div>
+    </div>
+    <div class="selection-actions">
+      <div class="mode-selection" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn selection-count-btn active" data-selection-count="5" type="button">5 DК</button>
+        <button class="btn selection-count-btn" data-selection-count="8" type="button">8 DК</button>
+        <button class="btn selection-count-btn" data-selection-count="10" type="button">10 DК</button>
+      </div>
+      <button class="btn dark" id="selectionAutoBtn" type="button">FORM SELECTION →</button>
+    </div>
+  </div>
+  <div class="selection-summary">
+    <div class="selection-metric"><b id="selectionTotalObjects">0</b><span>OBJECTS IN BASE</span></div>
+    <div class="selection-metric"><b id="selectionQualified">0</b><span>QUALIFYING OBJECTS</span></div>
+    <div class="selection-metric"><b id="selectionSelected">0</b><span>SELECTED OBJECTS</span></div>
+    <div class="selection-metric"><b id="selectionAverage">—</b><span>AVERAGE SCORE</span></div>
+  </div>
+  <div class="selection-workspace">
+    <aside class="selection-sidebar">
+      <div class="small">FILTERS</div>
+      <div class="selection-field"><label for="selectionSearch">SEARCH</label><input id="selectionSearch" type="text" placeholder="CULTURAL HOUSE / SETTLEMENT..."></div>
+      <div class="selection-field"><label for="selectionRegion">MARZ</label><select id="selectionRegion"><option value="">ALL MARZES</option></select></div>
+      <div class="selection-field"><label for="selectionCondition">CONDITION</label><select id="selectionCondition"><option value="">ALL CONDITIONS</option></select></div>
+      <div class="selection-field"><label>GEOGRAPHY / TYPE</label><div class="selection-checks">
+        <label><input type="checkbox" data-selection-flag="border"> Borderland</label>
+        <label><input type="checkbox" data-selection-flag="mountain"> Mountain / remote</label>
+        <label><input type="checkbox" data-selection-flag="urban"> Urban</label>
+        <label><input type="checkbox" data-selection-flag="rural"> Rural</label>
+      </div></div>
+      <div class="selection-field"><label>ARCHITECTURE / VALUE</label><div class="selection-checks">
+        <label><input type="checkbox" data-selection-flag="famousArchitect"> Known architect</label>
+        <label><input type="checkbox" data-selection-flag="unique"> Unique architecture / plan</label>
+        <label><input type="checkbox" data-selection-flag="heritage"> Heritage significance</label>
+        <label><input type="checkbox" data-selection-flag="art"> Artistic-cultural value</label>
+      </div></div>
+      <div class="selection-field"><label>FUNCTION / NEED</label><div class="selection-checks">
+        <label><input type="checkbox" data-selection-flag="abandoned"> Abandoned / non-functioning</label>
+        <label><input type="checkbox" data-selection-flag="needsModern"> Needs modernization</label>
+      </div></div>
+      <div class="selection-field"><label>MINIMUM TOTAL SCORE</label><div class="selection-score-row"><input id="selectionMinScore" type="range" min="0" max="100" value="50"><span class="selection-score-value" id="selectionMinScoreValue">50</span></div></div>
+      <div class="selection-targets">
+        <div class="small">TARGET CATEGORIES</div>
+        <div class="selection-target-list">
+          <label class="selection-target"><input type="checkbox" data-selection-target="border" checked> Borderland</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="famousArchitect" checked> Known architect</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="urban" checked> Urban</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="rural" checked> Rural</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="mountain" checked> Mountain / remote</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="abandoned" checked> Abandoned</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="needsModern" checked> Needs modernization</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="heritage" checked> Heritage significance</label>
+          <label class="selection-target"><input type="checkbox" data-selection-target="unique" checked> Unique type / plan</label>
+        </div>
+        <div class="selection-note">The system tries to cover these categories first, then fills the remaining places with the highest-scoring objects. One object may cover several categories.</div>
+      </div>
+    </aside>
+    <main>
+      <div class="selection-results-head">
+        <div><div class="small" id="selectionPoolLabel">FILTERED CANDIDATES</div><div class="small" id="selectionCoverageSummary">0 target categories covered</div></div>
+        <div class="selection-sort"><span class="small">SORT</span><select id="selectionSort"><option value="score">SCORE</option><option value="region">REGION</option><option value="name">NAME</option></select></div>
+      </div>
+      <div class="selection-results" id="selectionResults"></div>
+      <div class="selection-coverage"><div class="selection-coverage-head"><div class="small">SELECTION COVERAGE</div><div class="small" id="selectionCoverageNumber">—</div></div><div class="selection-coverage-grid" id="selectionCoverageGrid"></div></div>
+      <div class="selection-method"><div class="small">METHOD</div><div class="selection-method-grid">
+        <div class="selection-method-card"><b>01 · SCORE</b><p>Each object is evaluated across 20 criteria from 0 to 5. The total score is normalized to 100.</p></div>
+        <div class="selection-method-card"><b>02 · REPRESENT</b><p>The algorithm prioritizes the target categories so the final group is diverse rather than simply the first N objects.</p></div>
+        <div class="selection-method-card"><b>03 · VERIFY</b><p>Auto-assessment is only a draft. Researcher-entered scores and category flags can replace it object by object.</p></div>
+      </div></div>
+    </main>
+  </div>
+</section>
+<div class="section-divider"><span>07 / SUPPORT</span></div>
 <section class="support-section" id="support">
 <div class="support-head-editable"><div><div class="small">ARCHIVE SUPPORT</div><h2 id="supportTitle">SUPPORT THE ARCHIVE</h2><p id="supportIntro">Help document, preserve and activate Armenia’s cultural houses.</p></div></div>
 <div class="support-toolbar">
@@ -1196,7 +1332,7 @@ Interior conservation"></textarea></div>
 </div>
 <div class="fieldwork-note">FIELDWORK RECORDS ARE PART OF THE RESEARCH ARCHIVE. EACH VISIT CAN CONNECT PHOTOGRAPHS, OBSERVATIONS AND ARCHITECTURAL INFORMATION TO A CULTURAL HOUSE IN THE DATABASE.</div>
 </section>
-<div class="section-divider"><span>07 / ABOUT</span></div>
+<div class="section-divider"><span>08 / ABOUT</span></div>
 <section class="about-editorial" id="about">
 <div class="about-topbar"><span id="aboutKicker">ABOUT THE PROJECT</span><button class="about-edit-btn" id="editAboutBtn" type="button">EDIT ABOUT</button></div>
 <div class="about-hero-grid">
@@ -1454,7 +1590,7 @@ let settings={style:"standard",zoom:8,marker:"status",icon:"pin",view:"grid",the
  bg:"#eeeae2",text:"#171717",muted:"#77736b",line:"#b9b4aa",card:"#f7f5f0",font:"Arial,sans-serif",fontSize:16,
  headerH:74,headerPad:28,navGap:24,navSize:11,navSpacing:".12em",contentPad:28,sectionPad:82,lineW:1,
  btnRadius:0,cardRadius:0,cardGap:1,shadow:"none",heroHeight:"screen",heroOpacity:.55,heroFilter:"grayscale(1)",
- cardHeight:260,columns:3,pageSize:8,pageBg:"",customCSS:"",content:{nav:["CATALOG","MAP","ROUTES","FIELDWORK","DATA","SUPPORT","ABOUT"],heroKicker:"DIGITAL ARCHIVE / ARCHITECTURAL ATLAS / ARMENIA",statLabels:["OBJECTS","SETTLEMENTS","REGIONS","ABANDONED"],supportTitle:"SUPPORT THE ARCHIVE",supportIntro:"Help document, preserve and activate Armenia’s cultural houses.",aboutKicker:"ABOUT THE PROJECT",aboutTitle:"ABOUT",aboutSubtitle:"THE PROJECT BEHIND THE ARCHIVE",aboutIntro:"CH / Armenia is a digital archive and research platform dedicated to documenting, preserving and activating the cultural houses of Armenia.",heroPrimary:"EXPLORE MAP  →",heroSecondary:"BROWSE ARCHIVE  →",catalogKicker:"OBJECT DATABASE / ARMENIA",catalogTitle:"Catalog",mapKicker:"CONNECTED FIELDWORK LAYER",mapTitle:"Map",mapHelp:"A building from the catalog can be attached to the map without re-entering its data. Click ADD TO MAP on a card, then choose its location once. After that, the card and map point stay connected.",routesKicker:"ROUTE ARCHIVE",routesCopy:"BUILD, SAVE AND EXPLORE RESEARCH ROUTES BETWEEN CULTURAL HOUSES. SELECT OBJECTS FROM THE DATABASE AND FOLLOW THEIR CONNECTION ACROSS ARMENIA.",fieldworkKicker:"FIELD RESEARCH ARCHIVE",fieldworkTitle:"FIELDWORK ARCHIVE",fieldworkCopy:"DOCUMENTING REAL VISITS, OBSERVATIONS, PHOTOGRAPHS AND RESEARCH NOTES FROM CULTURAL HOUSES ACROSS ARMENIA.",dataKicker:"RESEARCH DATABASE / LIVE OVERVIEW",dataTitle:"DATA",dataCopy:"A compact overview of the archive. Explore patterns here; browse individual cultural houses in the Catalog.",visible:{catalog:true,"map-section":true,routes:true,fieldwork:true,data:true,support:true,about:true}},
+ cardHeight:260,columns:3,pageSize:8,pageBg:"",customCSS:"",content:{nav:["CATALOG","MAP","ROUTES","FIELDWORK","DATA","SELECTION","SUPPORT","ABOUT"],heroKicker:"DIGITAL ARCHIVE / ARCHITECTURAL ATLAS / ARMENIA",statLabels:["OBJECTS","SETTLEMENTS","REGIONS","ABANDONED"],supportTitle:"SUPPORT THE ARCHIVE",supportIntro:"Help document, preserve and activate Armenia’s cultural houses.",aboutKicker:"ABOUT THE PROJECT",aboutTitle:"ABOUT",aboutSubtitle:"THE PROJECT BEHIND THE ARCHIVE",aboutIntro:"CH / Armenia is a digital archive and research platform dedicated to documenting, preserving and activating the cultural houses of Armenia.",heroPrimary:"EXPLORE MAP  →",heroSecondary:"BROWSE ARCHIVE  →",catalogKicker:"OBJECT DATABASE / ARMENIA",catalogTitle:"Catalog",mapKicker:"CONNECTED FIELDWORK LAYER",mapTitle:"Map",mapHelp:"A building from the catalog can be attached to the map without re-entering its data. Click ADD TO MAP on a card, then choose its location once. After that, the card and map point stay connected.",routesKicker:"ROUTE ARCHIVE",routesCopy:"BUILD, SAVE AND EXPLORE RESEARCH ROUTES BETWEEN CULTURAL HOUSES. SELECT OBJECTS FROM THE DATABASE AND FOLLOW THEIR CONNECTION ACROSS ARMENIA.",fieldworkKicker:"FIELD RESEARCH ARCHIVE",fieldworkTitle:"FIELDWORK ARCHIVE",fieldworkCopy:"DOCUMENTING REAL VISITS, OBSERVATIONS, PHOTOGRAPHS AND RESEARCH NOTES FROM CULTURAL HOUSES ACROSS ARMENIA.",dataKicker:"RESEARCH DATABASE / LIVE OVERVIEW",dataTitle:"DATA",dataCopy:"A compact overview of the archive. Explore patterns here; browse individual cultural houses in the Catalog.",selectionKicker:"PROJECT SELECTION / RESEARCH METHOD",selectionTitle:"Selection for design",selectionCopy:"A transparent method for selecting 5–10 cultural houses for project development from the full research database.",visible:{catalog:true,"map-section":true,routes:true,fieldwork:true,data:true,selection:true,support:true,about:true}},
  ...JSON.parse(localStorage.getItem("dk_settings_v9")||"{}")};
 let map,layer,tile,editing=-1,newPhoto=null,newPhotos=[],addingPoint=false,mapStatus="",pendingMapIndex=null;
 let routeIds=JSON.parse(localStorage.getItem("dk_route_v10")||"[]");
@@ -1499,15 +1635,15 @@ function ensurePageScroll(){const o=document.getElementById("objectOverlay");if(
 setInterval(ensurePageScroll,1000);
 
 function applySiteContent(){
- const ct=settings.content||{}; const nav=Array.isArray(ct.nav)?ct.nav:[];
+ const ct=settings.content||{}; let nav=Array.isArray(ct.nav)?[...ct.nav]:[]; if(nav.length===7){nav.splice(5,0,"SELECTION");ct.nav=nav;} while(nav.length<8)nav.push(["CATALOG","MAP","ROUTES","FIELDWORK","DATA","SELECTION","SUPPORT","ABOUT"][nav.length]);
  // Safety: never allow a stale/invalid editor state to hide the entire public archive.
- const coreIds=["catalog","map-section","routes","fieldwork","data","support","about"];
+ const coreIds=["catalog","map-section","routes","fieldwork","data","selection","support","about"];
  if(ct.visible && coreIds.every(id=>ct.visible[id]===false)){ct.visible=Object.fromEntries(coreIds.map(id=>[id,true]));settings.content.visible=ct.visible;localStorage.setItem("dk_settings_v9",JSON.stringify(settings));}
  [...document.querySelectorAll("header nav a")].forEach((a,i)=>{if(nav[i])a.textContent=nav[i]});
  const setText=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.textContent=v};
- setText("heroKicker",ct.heroKicker);setText("heroPrimary",ct.heroPrimary);setText("heroSecondary",ct.heroSecondary);["catalog","map-section","routes","fieldwork","data","support","about"].forEach(id=>{const e=document.getElementById(id);if(e){const hidden=ct.visible&&ct.visible[id]===false;e.style.display=hidden?"none":"";const prev=e.previousElementSibling;if(prev&&prev.classList.contains("section-divider"))prev.style.display=hidden?"none":"";}}); const sl=Array.isArray(ct.statLabels)?ct.statLabels:[];
+ setText("heroKicker",ct.heroKicker);setText("heroPrimary",ct.heroPrimary);setText("heroSecondary",ct.heroSecondary);["catalog","map-section","routes","fieldwork","data","selection","support","about"].forEach(id=>{const e=document.getElementById(id);if(e){const hidden=ct.visible&&ct.visible[id]===false;e.style.display=hidden?"none":"";const prev=e.previousElementSibling;if(prev&&prev.classList.contains("section-divider"))prev.style.display=hidden?"none":"";}}); const sl=Array.isArray(ct.statLabels)?ct.statLabels:[];
  ["statObjects","statSettlements","statRegions","statAbandoned"].forEach((id,i)=>{const e=document.getElementById(id)?.parentElement?.querySelector(".statlabel");if(e&&sl[i])e.textContent=sl[i]});
- setText("catalogKicker",ct.catalogKicker);setText("catalogTitle",ct.catalogTitle);setText("mapKicker",ct.mapKicker);setText("mapTitle",ct.mapTitle);setText("mapHelp",ct.mapHelp);setText("routesKicker",ct.routesKicker);setText("routesCopy",ct.routesCopy);setText("fieldworkKicker",ct.fieldworkKicker);setText("fieldworkTitle",ct.fieldworkTitle);setText("fieldworkCopy",ct.fieldworkCopy);setText("dataKicker",ct.dataKicker);setText("dataTitle",ct.dataTitle);setText("dataCopy",ct.dataCopy);setText("aboutKicker",ct.aboutKicker);setText("aboutTitle",ct.aboutTitle);setText("aboutSubtitle",ct.aboutSubtitle);setText("aboutIntro",ct.aboutIntro);setText("supportTitle",ct.supportTitle);setText("supportIntro",ct.supportIntro);
+ setText("catalogKicker",ct.catalogKicker);setText("catalogTitle",ct.catalogTitle);setText("mapKicker",ct.mapKicker);setText("mapTitle",ct.mapTitle);setText("mapHelp",ct.mapHelp);setText("routesKicker",ct.routesKicker);setText("routesCopy",ct.routesCopy);setText("fieldworkKicker",ct.fieldworkKicker);setText("fieldworkTitle",ct.fieldworkTitle);setText("fieldworkCopy",ct.fieldworkCopy);setText("dataKicker",ct.dataKicker);setText("dataTitle",ct.dataTitle);setText("dataCopy",ct.dataCopy);setText("selectionKicker",ct.selectionKicker);setText("selectionTitle",ct.selectionTitle);setText("selectionCopy",ct.selectionCopy);setText("aboutKicker",ct.aboutKicker);setText("aboutTitle",ct.aboutTitle);setText("aboutSubtitle",ct.aboutSubtitle);setText("aboutIntro",ct.aboutIntro);setText("supportTitle",ct.supportTitle);setText("supportIntro",ct.supportIntro);
 }
 function applyInterface(){
   document.body.classList.remove("theme-dark","theme-white");
@@ -3166,7 +3302,7 @@ try {
 }
 </script>
 <script>
-/* Final archive navigation: keeps the seven-part structure visually connected. */
+/* Final archive navigation: keeps the eight-part structure visually connected. */
 (function(){
   const links=[...document.querySelectorAll('.nav a[href^="#"]')];
   const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
@@ -3579,6 +3715,95 @@ try {
       if(document.visibilityState==="hidden") saveLocalSnapshot();
     });
   });
+})();
+</script>
+
+<div class="overlay" id="selectionEditorOverlay">
+  <div class="modal selection-editor-modal">
+    <button class="close" id="closeSelectionEditor" type="button">×</button>
+    <div class="selection-editor-header"><div><div class="small">PROJECT SELECTION / OBJECT CRITERIA</div><h2 id="selectionEditorTitle" style="margin:7px 45px 5px 0">EDIT CRITERIA</h2><div class="selection-editor-sub" id="selectionEditorSub">Score this object from 0 to 5 for each criterion. Manual values override the draft auto-assessment.</div></div><div class="selection-score" id="selectionEditorTotal">—/100</div></div>
+    <div class="selection-editor-fields" id="selectionEditorFields"></div>
+    <div class="selection-flag-box"><div class="small">OBJECT CATEGORY FLAGS</div><div class="selection-flag-grid" id="selectionEditorFlags"></div></div>
+    <div class="selection-editor-footnote">The criteria are research inputs, not legal or technical norms. Verify each value from fieldwork, archival material or reliable sources before using it as a thesis conclusion.</div>
+    <div class="actions"><button class="btn" id="cancelSelectionEdit" type="button">CANCEL</button><button class="btn dark" id="saveSelectionEdit" type="button">SAVE CRITERIA</button></div>
+  </div>
+</div>
+
+<script id="project-selection-module">
+(function(){
+  const CRITERIA=[["architectural","Architectural value"],["architect","Author / known architect"],["historical","Historical-cultural significance"],["artistic","Artistic-cultural value"],["unique","Architectural / plan uniqueness"],["typology","Typological representativeness"],["functional","Functional condition"],["modernization","Need for modernization"],["physical","Physical condition"],["adaptation","Adaptation potential"],["social","Social significance"],["local","Local significance for the settlement"],["geographic","Geographic representativeness"],["border","Borderland position"],["urbanism","Urban significance"],["context","Historical-cultural context"],["territory","Adjacent territory potential"],["tourism","Tourism / regional potential"],["identity","Local identity potential"],["research","Research accessibility"]];
+  const FLAGS=[["border","Borderland"],["famousArchitect","Known architect"],["urban","Urban"],["rural","Rural"],["mountain","Mountain / remote"],["abandoned","Abandoned"],["needsModern","Needs modernization"],["heritage","Heritage significance"],["unique","Unique architecture / plan"],["art","Artistic-cultural value"]];
+  const TARGET_IDS=["border","famousArchitect","urban","rural","mountain","abandoned","needsModern","heritage","unique"];
+  const state={count:5,selected:[],minScore:50,sort:"score",manualScores:{},manualFlags:{},targets:[...TARGET_IDS]};
+  let initialized=false,editingId="";
+  const q=id=>document.getElementById(id);
+  const safe=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+  const data=()=>Array.isArray(db)?db:[];
+  const keyFor=b=>String(b?.id??b?.no??"");
+  const textOf=b=>[b?.name,b?.settlement,b?.community,b?.region,b?.architect_style,b?.notes,b?.monumental,b?.typical,b?.heritage].filter(Boolean).join(" ");
+  const isKnownArchitect=b=>!!String(b?.architect_style||"").trim()&&!/չճշտ|unknown|tbd|not added|неизвест/i.test(String(b?.architect_style||""))&&!/գյուղական մոդեռնիզմ|rural modernism/i.test(String(b?.architect_style||""));
+  const urbanPlaces=new Set(["Երևան","Գյումրի","Վանաձոր","Հրազդան","Աբովյան","Արմավիր","Արտաշատ","Արարատ","Մասիս","Վեդի","Աշտարակ","Թալին","Ապարան","Գավառ","Սևան","Մարտունի","Եղեգնաձոր","Վայք","Ջերմուկ","Իջևան","Դիլիջան","Բերդ","Նոյեմբերյան","Գորիս","Սիսիան","Կապան","Մեղրի","Քաջարան"]);
+  const touristPlaces=new Set(["Արենի","Եղեգիս","Շատին","Գլաձոր","Տաթև","Մեղրի","Գորիս","Ջերմուկ","Ծաղկաձոր","Դիլիջան","Սևան","Աշտարակ"]);
+  function baseFlagScore(b,flag){
+    const t=textOf(b).toLowerCase(),cond=String(b?.condition||"").toLowerCase()+" "+String(b?.current_use||"").toLowerCase();
+    if(flag==="famousArchitect")return isKnownArchitect(b);
+    if(flag==="urban")return urbanPlaces.has(String(b?.settlement||""))||urbanPlaces.has(String(b?.community||""));
+    if(flag==="rural")return !baseFlagScore(b,"urban");
+    if(flag==="heritage")return !!String(b?.heritage||"").trim()||/մշակութ|պատմ|հուշարձան|heritage|monument/i.test(t);
+    if(flag==="art")return !!String(b?.monumental||"").trim()||/խաչքար|մոզաիկա|մոզայկա|որմնանկար|նկար|sculpt|mosaic|mural|painting|khachkar/i.test(t);
+    if(flag==="abandoned")return /լք|abandon|չգործ|չի գործում|ruin|ավերվ/i.test(cond);
+    if(flag==="needsModern")return /վերանորոգ|վերակառուց|պահանջ|կիսա|partial|repair|renovat|reconstruct|underused|unused|inactive/i.test(t+" "+cond);
+    if(flag==="mountain")return /լեռ|mountain|remote|հեռավոր|բարձրլեռն|highland/i.test(t);
+    if(flag==="border")return false;
+    if(flag==="unique")return /individual|unique|անհատ|յուրահատ/i.test(String(b?.typical||"")+" "+t);
+    return false;
+  }
+  function flagMap(b){const id=keyFor(b),over=state.manualFlags[id]||{},out={};FLAGS.forEach(([flag])=>{out[flag]=over[flag]!==undefined?!!over[flag]:!!baseFlagScore(b,flag)});return out;}
+  function autoScore(b,id){
+    const t=textOf(b).toLowerCase(),fl=flagMap(b),cond=String(b?.condition||"").toLowerCase();
+    if(id==="architectural")return Math.min(5,fl.famousArchitect?5:(b?.architect_style&&!/չճշտ/.test(String(b.architect_style))?4:3));
+    if(id==="architect")return fl.famousArchitect?5:0;
+    if(id==="historical")return fl.heritage?5:(parseInt(String(b?.year||""))&&parseInt(String(b.year))<1990?3:2);
+    if(id==="artistic")return fl.art?5:0;
+    if(id==="unique")return fl.unique?5:(b?.typical?3:2);
+    if(id==="typology")return b?.typical?4:3;
+    if(id==="functional")return /գործող|active|used/i.test(cond)?3:/կիս|partial/i.test(cond)?4:/լք|abandon|չգործ/i.test(cond)?5:2;
+    if(id==="modernization")return fl.needsModern?5:3;
+    if(id==="physical")return /լք|abandon|ruin|ավերվ|critical/i.test(cond)?5:/վերանորոգ|repair|poor|bad/i.test(cond)?4:3;
+    if(id==="adaptation")return (b?.area||b?.floors||b?.typical)?4:3;
+    if(id==="social")return b?.current_use||b?.usage?4:3;
+    if(id==="local")return 3;
+    if(id==="geographic")return fl.border?5:(fl.mountain?4:3);
+    if(id==="border")return fl.border?5:0;
+    if(id==="urbanism")return fl.urban?4:3;
+    if(id==="context")return fl.heritage||fl.art?4:3;
+    if(id==="territory")return (b?.lat&&b?.lng)?4:3;
+    if(id==="tourism")return touristPlaces.has(String(b?.settlement||""))?5:2;
+    if(id==="identity")return fl.heritage||fl.art?4:3;
+    if(id==="research")return Math.min(5,(b?.lat&&b?.lng?1:0)+(Array.isArray(b?.photos)&&b.photos.length?2:1)+(b?.source||b?.notes?2:1));
+    return 0;
+  }
+  function scoreMap(b){const id=keyFor(b),over=state.manualScores[id]||{},out={};CRITERIA.forEach(([key])=>{out[key]=over[key]!==undefined?Math.max(0,Math.min(5,Number(over[key]))):Math.max(0,Math.min(5,Number(autoScore(b,key))));});return out;}
+  function totalScore(b){const s=scoreMap(b);return Math.round(Object.values(s).reduce((a,v)=>a+v,0));}
+  function selectedManual(b){return !!state.manualScores[keyFor(b)]||!!state.manualFlags[keyFor(b)];}
+  function currentFilters(){const f={search:(q("selectionSearch").value||"").trim().toLowerCase(),region:q("selectionRegion").value||"",condition:q("selectionCondition").value||""};document.querySelectorAll("[data-selection-flag]:checked").forEach(el=>f[el.dataset.selectionFlag]=true);return f;}
+  function qualify(b){const f=currentFilters(),score=totalScore(b),hay=textOf(b).toLowerCase();if(f.search&&!hay.includes(f.search))return false;if(f.region&&String(b.region||"")!==f.region)return false;if(f.condition&&String(b.condition||"")!==f.condition)return false;const fm=flagMap(b);for(const flag of FLAGS.map(x=>x[0]))if(f[flag]&&!fm[flag])return false;return score>=state.minScore;}
+  function populateFilters(){const rs=[...new Set(data().map(x=>x.region).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));const cs=[...new Set(data().map(x=>x.condition).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));const r=q("selectionRegion"),cc=q("selectionCondition"),rv=r.value,cv=cc.value;r.innerHTML='<option value="">ALL MARZES</option>'+rs.map(x=>'<option value="'+safe(x)+'">'+safe(x)+'</option>').join("");cc.innerHTML='<option value="">ALL CONDITIONS</option>'+cs.map(x=>'<option value="'+safe(x)+'">'+safe(x)+'</option>').join("");r.value=rs.includes(rv)?rv:"";cc.value=cs.includes(cv)?cv:"";}
+  function candidateList(){let arr=data().filter(qualify);if(state.sort==="region")arr.sort((a,b)=>String(a.region||"").localeCompare(String(b.region||""))||totalScore(b)-totalScore(a));else if(state.sort==="name")arr.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""))||totalScore(b)-totalScore(a));else arr.sort((a,b)=>totalScore(b)-totalScore(a));return arr;}
+  function chooseRepresentative(pool,n){const selected=[],used=new Set(),targets=state.targets.slice(),sorted=[...pool].sort((a,b)=>totalScore(b)-totalScore(a)),uncovered=new Set(targets);while(selected.length<n&&sorted.length){let best=null,bestBenefit=-Infinity;for(const b of sorted){const id=keyFor(b);if(used.has(id))continue;const flags=flagMap(b),cover=targets.filter(t=>uncovered.has(t)&&flags[t]).length,benefit=totalScore(b)+cover*8;if(best===null||benefit>bestBenefit){best=b;bestBenefit=benefit;}}if(!best)break;selected.push(best);used.add(keyFor(best));const flags=flagMap(best);targets.forEach(t=>{if(flags[t])uncovered.delete(t);});}return selected.slice(0,n);}
+  function renderCoverage(selected){const cov=state.targets.map(id=>{const found=FLAGS.find(x=>x[0]===id);return {id:id,label:found?found[1]:id,covered:selected.some(b=>flagMap(b)[id])};});const covered=cov.filter(x=>x.covered).length,total=cov.length;q("selectionCoverageNumber").textContent=total?covered+"/"+total:"—";q("selectionCoverageSummary").textContent=covered+" target categor"+(covered===1?"y":"ies")+" covered";q("selectionCoverageGrid").innerHTML=cov.map(x=>'<div class="selection-coverage-item '+(x.covered?"covered":"missing")+'">'+(x.covered?"✓ ":"× ")+safe(x.label)+'</div>').join("");}
+  function reasonFor(b){const sm=scoreMap(b),flags=flagMap(b),high=CRITERIA.map(([k,label])=>[label,sm[k]]).sort((a,b)=>b[1]-a[1]).slice(0,3).filter(x=>x[1]>=4),cats=TARGET_IDS.filter(id=>flags[id]).map(id=>(FLAGS.find(x=>x[0]===id)||["",id])[1]);const lead=high.length?high.map(x=>x[0]).join(", "):"balanced research profile";return "High-value profile driven by "+lead+"."+(cats.length?" It also represents "+cats.join(", ")+"."+ "":"");}
+  function render(){if(!q("selectionResults"))return;populateFilters();const pool=candidateList();q("selectionTotalObjects").textContent=data().length;q("selectionQualified").textContent=pool.length;q("selectionCount").textContent=pool.length+" OBJECTS";state.selected=state.selected.filter(id=>pool.some(b=>keyFor(b)===id));const chosen=state.selected.map(id=>pool.find(b=>keyFor(b)===id)).filter(Boolean);q("selectionSelected").textContent=chosen.length;q("selectionAverage").textContent=chosen.length?Math.round(chosen.reduce((s,b)=>s+totalScore(b),0)/chosen.length):"—";const box=q("selectionResults");if(!pool.length){box.innerHTML='<div class="selection-empty">NO OBJECTS MATCH THE CURRENT FILTERS.</div>';renderCoverage([]);return;}box.innerHTML=pool.slice(0,50).map(b=>{const id=keyFor(b),score=totalScore(b),flags=flagMap(b),isSel=state.selected.includes(id),manual=selectedManual(b),sm=scoreMap(b),mod=Math.round((sm.modernization+sm.adaptation)/2),local=sm.local,arch=sm.architectural,tags=TARGET_IDS.filter(t=>flags[t]).map(t=>'<span class="selection-tag">'+safe((FLAGS.find(x=>x[0]===t)||["",t])[1])+'</span>').slice(0,4).join("");return '<article class="selection-card '+(isSel?"is-selected":"")+'">'+(manual?'':'<span class="selection-auto">AUTO DRAFT</span>')+'<div class="selection-card-head"><div><div class="selection-card-name">'+safe(b.name||b.settlement||"CULTURAL HOUSE")+'</div><div class="selection-card-place">'+safe([b.region,b.settlement||b.community].filter(Boolean).join(" · "))+'</div></div><div class="selection-score">'+score+'<small>/100</small></div></div><div class="selection-progress"><span style="width:'+score+'%"></span></div><div class="selection-tags">'+(tags||'<span class="selection-tag warn">NO TARGET CATEGORY</span>')+'</div><div class="selection-reason">'+safe(reasonFor(b))+'</div><div class="selection-card-meta"><div class="selection-mini"><b>'+mod+'/5</b><span>MODERNIZATION</span></div><div class="selection-mini"><b>'+local+'/5</b><span>LOCAL VALUE</span></div><div class="selection-mini"><b>'+arch+'/5</b><span>ARCHITECTURE</span></div></div><div class="selection-card-actions"><button class="btn '+(isSel?"dark":"")+'" type="button" data-select-object="'+safe(id)+'">'+(isSel?"SELECTED":"SELECT")+'</button>'+((typeof adminUser!=="undefined"&&adminUser)?'<button class="btn" type="button" data-edit-selection="'+safe(id)+'">EDIT CRITERIA</button>':"")+'</div></article>';}).join("");renderCoverage(chosen);box.querySelectorAll("[data-select-object]").forEach(btn=>btn.onclick=()=>{const id=String(btn.dataset.selectObject);state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];render();});box.querySelectorAll("[data-edit-selection]").forEach(btn=>btn.onclick=()=>openEditor(btn.dataset.editSelection));}
+  function autoSelect(){const chosen=chooseRepresentative(candidateList(),state.count);state.selected=chosen.map(keyFor);render();}
+  function fillEditor(b){const sm=scoreMap(b);q("selectionEditorFields").innerHTML=CRITERIA.map(([key,label])=>'<div class="selection-score-field"><label>'+safe(label)+'</label><select data-score-key="'+key+'">'+[0,1,2,3,4,5].map(n=>'<option value="'+n+'" '+(n===sm[key]?"selected":"")+'>'+n+' / 5</option>').join("")+'</select></div>').join("");const flags=flagMap(b);q("selectionEditorFlags").innerHTML=FLAGS.map(([key,label])=>'<label><input type="checkbox" data-editor-flag="'+key+'" '+(flags[key]?"checked":"")+'>'+safe(label)+'</label>').join("");q("selectionEditorTotal").textContent=totalScore(b)+"/100";}
+  function openEditor(id){const b=data().find(x=>keyFor(x)===String(id));if(!b)return;editingId=String(id);q("selectionEditorTitle").textContent=b.name||b.settlement||"EDIT CRITERIA";fillEditor(b);q("selectionEditorOverlay").style.display="flex";}
+  function saveEditor(){const b=data().find(x=>keyFor(x)===editingId);if(!b)return;const vals={};q("selectionEditorFields").querySelectorAll("[data-score-key]").forEach(el=>vals[el.dataset.scoreKey]=Number(el.value));const flags={};q("selectionEditorFlags").querySelectorAll("[data-editor-flag]").forEach(el=>flags[el.dataset.editorFlag]=!!el.checked);state.manualScores[editingId]=vals;state.manualFlags[editingId]=flags;settings.content=settings.content||{};settings.content.selection={...(settings.content.selection||{}),manualScores:state.manualScores,manualFlags:state.manualFlags,targets:state.targets,minScore:state.minScore,defaultCount:state.count,sort:state.sort,savedAt:new Date().toISOString()};try{localStorage.setItem("dk_settings_v9",JSON.stringify(settings));localStorage.setItem("dk_settings_dirty_v1","1");if(typeof markLocalWorkspaceDirty==="function")markLocalWorkspaceDirty();if(typeof saveCloudSettings==="function"&&(typeof adminUser!=="undefined"&&adminUser)&&typeof cloudReady!=="undefined"&&cloudReady){clearTimeout(window._dkSelectionCloudTimer);window._dkSelectionCloudTimer=setTimeout(()=>saveCloudSettings(),300);}}catch(e){console.warn("Selection criteria save failed",e);}q("selectionEditorOverlay").style.display="none";render();}
+  function loadConfig(){const cfg=settings?.content?.selection||{};if(cfg.manualScores&&typeof cfg.manualScores==="object")state.manualScores=cfg.manualScores;if(cfg.manualFlags&&typeof cfg.manualFlags==="object")state.manualFlags=cfg.manualFlags;if(Array.isArray(cfg.targets)&&cfg.targets.length)state.targets=cfg.targets;if(Number.isFinite(+cfg.minScore))state.minScore=+cfg.minScore;if(Number.isFinite(+cfg.defaultCount)&&[5,8,10].includes(+cfg.defaultCount))state.count=+cfg.defaultCount;if(cfg.sort)state.sort=cfg.sort;if(q("selectionMinScore")){q("selectionMinScore").value=String(state.minScore);q("selectionMinScoreValue").textContent=String(state.minScore);}document.querySelectorAll("[data-selection-target]").forEach(el=>el.checked=state.targets.includes(el.dataset.selectionTarget));document.querySelectorAll(".selection-count-btn").forEach(el=>el.classList.toggle("active",+el.dataset.selectionCount===state.count));}
+  function persistLight(){settings.content=settings.content||{};settings.content.selection={...(settings.content.selection||{}),targets:state.targets,minScore:state.minScore,defaultCount:state.count,sort:state.sort,manualScores:state.manualScores,manualFlags:state.manualFlags};try{localStorage.setItem("dk_settings_v9",JSON.stringify(settings));localStorage.setItem("dk_settings_dirty_v1","1");}catch(e){}}
+  function bind(){if(initialized)return;initialized=true;loadConfig();document.querySelectorAll(".selection-count-btn").forEach(btn=>btn.onclick=()=>{state.count=+btn.dataset.selectionCount;document.querySelectorAll(".selection-count-btn").forEach(x=>x.classList.toggle("active",x===btn));state.selected=[];persistLight();render();});q("selectionAutoBtn").onclick=autoSelect;q("selectionSearch").oninput=()=>{state.selected=[];render();};q("selectionRegion").onchange=()=>{state.selected=[];render();};q("selectionCondition").onchange=()=>{state.selected=[];render();};q("selectionSort").onchange=e=>{state.sort=e.target.value;persistLight();render();};q("selectionMinScore").oninput=e=>{state.minScore=+e.target.value;q("selectionMinScoreValue").textContent=e.target.value;state.selected=[];persistLight();render();};document.querySelectorAll("[data-selection-flag]").forEach(el=>el.onchange=()=>{state.selected=[];render();});document.querySelectorAll("[data-selection-target]").forEach(el=>el.onchange=()=>{state.targets=[...document.querySelectorAll("[data-selection-target]:checked")].map(x=>x.dataset.selectionTarget);state.selected=[];persistLight();render();});q("closeSelectionEditor").onclick=()=>q("selectionEditorOverlay").style.display="none";q("cancelSelectionEdit").onclick=()=>q("selectionEditorOverlay").style.display="none";q("saveSelectionEdit").onclick=saveEditor;q("selectionEditorOverlay").addEventListener("click",e=>{if(e.target===q("selectionEditorOverlay"))q("selectionEditorOverlay").style.display="none";});q("selectionSort").value=state.sort;render();}
+  function boot(){if(!q("selection"))return;if(typeof settings!=="undefined")loadConfig();bind();render();setTimeout(render,1800);}
+  window.renderSelection=render;
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,500));
 })();
 </script>
 </body>
