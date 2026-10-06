@@ -1672,6 +1672,54 @@ function applyInterface(){
   if(settings.customCSS){old=document.createElement("style");old.id="customUserCSS";old.textContent=settings.customCSS;document.head.appendChild(old);}
   applySiteContent();
 }
+const DK_DIRTY_IDS_KEY="dk_archive_dirty_ids_v1";
+function getDirtyArchiveIds(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(DK_DIRTY_IDS_KEY)||"[]");
+    return Array.isArray(raw)?raw.map(String):[];
+  }catch(e){return[];}
+}
+function markArchiveDirty(id){
+  try{
+    const ids=new Set(getDirtyArchiveIds());
+    ids.add(id!=null&&id!==""?String(id):"__new__");
+    localStorage.setItem(DK_DIRTY_IDS_KEY,JSON.stringify([...ids]));
+    localStorage.setItem("dk_archive_dirty_v1","1");
+  }catch(e){}
+}
+function clearArchiveDirty(id){
+  try{
+    const ids=new Set(getDirtyArchiveIds());
+    if(id!=null&&id!=="")ids.delete(String(id));
+    ids.delete("__new__");
+    if(ids.size) localStorage.setItem(DK_DIRTY_IDS_KEY,JSON.stringify([...ids]));
+    else{
+      localStorage.removeItem(DK_DIRTY_IDS_KEY);
+      localStorage.removeItem("dk_archive_dirty_v1");
+    }
+  }catch(e){}
+}
+async function syncDirtyArchiveToCloud(){
+  const ids=getDirtyArchiveIds();
+  if(!ids.length)return {ok:true,none:true};
+  const pending=new Set(ids);
+  try{
+    for(const building of db){
+      const id=building?.id;
+      if((id!=null&&pending.has(String(id))) || (pending.has("__new__")&&(!id||Number(id)<=0))){
+        const result=await syncBuildingToCloud(building,true);
+        if(!result.ok)throw result.error||new Error(result.reason||"Cloud sync failed");
+        clearArchiveDirty(building.id);
+        pending.delete(String(building.id||""));
+      }
+    }
+    return {ok:true};
+  }catch(err){
+    console.error("Supabase dirty-object sync failed",err);
+    showCloudStatus("CLOUD ERROR · LOCAL COPY KEPT");
+    return {ok:false,reason:"cloud_error",error:err};
+  }
+}
 function persist(){
   dkSaveArchiveSafe(db,false).catch(e=>console.warn("Safe local archive save failed:",e));
   render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
@@ -1833,6 +1881,7 @@ async function syncAllToCloud(){
     cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
     await dkSaveArchiveSafe(db,false);
     localStorage.removeItem("dk_archive_dirty_v1");
+    localStorage.removeItem(DK_DIRTY_IDS_KEY);
     localStorage.setItem("dk_last_archive_cloud_save_v1",new Date().toISOString());
     showCloudStatus("CLOUD SAVED · "+db.length+" OBJECTS");
     return {ok:true};
@@ -1857,8 +1906,11 @@ async function bootstrapCloudIfEmpty(){
     const localSettingsDirty=localStorage.getItem("dk_settings_dirty_v1")==="1";
     const localWorkspaceDirty=localStorage.getItem("dk_workspace_dirty_v1")==="1";
 
-    if(Number(count||0)===0 || localArchiveDirty){
+    if(Number(count||0)===0){
       const result=await syncAllToCloud();
+      if(!result.ok)return result;
+    }else{
+      const result=await syncDirtyArchiveToCloud();
       if(!result.ok)return result;
     }
 
@@ -1917,8 +1969,9 @@ async function loadCloud(){
     return;
   }
   const localArchiveDirty=localStorage.getItem("dk_archive_dirty_v1")==="1";
+  const dirtyArchiveIds=getDirtyArchiveIds();
   let cloudRows=(data||[]).map(fromCloudRow);
-  if(localArchiveDirty){
+  if(localArchiveDirty && dirtyArchiveIds.length){
     const local=await dkLoadArchiveSafe();
     if(Array.isArray(local) && local.length){
       db=local;
@@ -2156,6 +2209,7 @@ async function saveEdit(){
   x.extra_data={...(old.extra_data||{}),selection:readEditorSelection(),passportFields:readEditorPassportFields()};
   if(editing<0)db.push(x);else db[editing]={...old,...x};
   const savedIndex=editing<0?db.length-1:editing;
+  markArchiveDirty(db[savedIndex]?.id);
   const wasObject=document.getElementById("objectOverlay").style.display==="block";
   const saveButton=document.getElementById("saveBtn");
   const oldSaveText=saveButton?saveButton.textContent:"";
@@ -2184,6 +2238,7 @@ async function saveEdit(){
       if(cloudReady){
         const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
         if(!cloudResult.ok) console.warn("Cloud save failed; local copy kept.",cloudResult.error||cloudResult.reason);
+        else clearArchiveDirty(db[savedIndex]?.id);
       }
     }catch(cloudError){
       console.error("Cloud sync failed; local passport is safe.",cloudError);
