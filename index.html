@@ -3823,5 +3823,103 @@ window.renderSelection=render;
 document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,700));
 })();
 </script>
+<script id="selection-config-hard-fix">
+(function(){
+  function cfg(){settings.content=settings.content||{};settings.content.selection=settings.content.selection||{};return settings.content.selection}
+  function renderManager(){
+    const cb=document.getElementById("selectionCriteriaManager"),fb=document.getElementById("selectionFlagsManager");
+    if(!cb||!fb)return;
+    cb.innerHTML=DK_SELECTION_CRITERIA.map(([key,label,weight])=>"<div class='selection-manager-row' data-hard-criterion data-key='"+esc(key)+"'><div class='selection-manager-order'><button type='button' class='btn selection-manager-mini' data-hard-up>↑</button><button type='button' class='btn selection-manager-mini' data-hard-down>↓</button></div><div class='field'><label>Չափանիշի անվանում</label><input data-hard-label value='"+esc(label)+"'></div><div class='field'><label>Քաշ / %</label><input data-hard-weight type='number' min='0' max='100' step='1' value='"+(Number(weight)||0)+"'></div><button type='button' class='btn selection-manager-delete' data-hard-delete>ՋՆՋԵԼ</button></div>").join("");
+    fb.innerHTML=DK_SELECTION_FLAGS.map(([key,label])=>"<div class='selection-manager-row flag-row' data-hard-flag data-key='"+esc(key)+"'><div class='field'><label>Կատեգորիայի անվանում</label><input data-hard-flag-label value='"+esc(label)+"'></div><label class='selection-target-check'><input type='checkbox' data-hard-target "+(selectionTargets().includes(key)?"checked":"")+"> Օգտագործել ավտոմատ ընտրության ներկայացուցչականության մեջ</label><button type='button' class='btn selection-manager-delete' data-hard-flag-delete>ՋՆՋԵԼ</button></div>").join("");
+    updateTotal();
+  }
+  function updateTotal(){
+    const total=[...document.querySelectorAll("[data-hard-weight]")].reduce((a,e)=>a+(Number(e.value)||0),0);
+    const el=document.getElementById("selectionCriteriaWeightTotal");
+    if(el){el.textContent="Ընդհանուր քաշ՝ "+total+"%"+(total===100?"":" · պետք է լինի 100%");el.classList.toggle("warn",total!==100)}
+  }
+  function openManager(e){
+    if(e){e.preventDefault();e.stopImmediatePropagation();}
+    renderManager();
+    const o=document.getElementById("selectionConfigOverlay");
+    if(o){o.style.display="block";o.scrollTop=0;}
+  }
+  function closeManager(e){
+    if(e){e.preventDefault();e.stopImmediatePropagation();}
+    const o=document.getElementById("selectionConfigOverlay");
+    if(o)o.style.display="none";
+  }
+  function saveManager(e){
+    if(e){e.preventDefault();e.stopImmediatePropagation();}
+    const criteria=[],flags=[],targets=[];
+    document.querySelectorAll("[data-hard-criterion]").forEach(row=>{
+      const key=row.dataset.key||("criterion_"+Date.now()+"_"+criteria.length);
+      const label=row.querySelector("[data-hard-label]")?.value.trim()||"Չափանիշ";
+      const weight=Math.max(0,Number(row.querySelector("[data-hard-weight]")?.value)||0);
+      criteria.push([key,label,weight]);
+    });
+    document.querySelectorAll("[data-hard-flag]").forEach(row=>{
+      const key=row.dataset.key||("flag_"+Date.now()+"_"+flags.length);
+      const label=row.querySelector("[data-hard-flag-label]")?.value.trim()||"Կատեգորիա";
+      flags.push([key,label]);
+      if(row.querySelector("[data-hard-target]")?.checked)targets.push(key);
+    });
+    const weightSum=criteria.reduce((a,x)=>a+x[2],0);
+    if(!criteria.length){alert("Պետք է մնա առնվազն մեկ չափանիշ։");return;}
+    if(weightSum!==100){alert("Ընդհանուր քաշը պետք է լինի 100%։");return;}
+    DK_SELECTION_CRITERIA.splice(0,DK_SELECTION_CRITERIA.length,...criteria);
+    DK_SELECTION_FLAGS.splice(0,DK_SELECTION_FLAGS.length,...flags);
+    const c=cfg();c.criteria=criteria;c.flags=flags;c.targets=targets;
+    settings.content.selection=c;
+    try{
+      localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
+      localStorage.setItem("dk_settings_dirty_v1","1");
+      if(typeof persistWorkspace==="function")persistWorkspace();
+      if(typeof saveCloudSettings==="function"&&typeof adminUser!=="undefined"&&adminUser)saveCloudSettings();
+    }catch(err){console.warn("Selection methodology save failed",err);}
+    try{if(typeof editing!=="undefined"&&editing>=0&&db[editing]&&typeof renderEditorSelection==="function")renderEditorSelection(db[editing]);}catch(err){}
+    try{if(typeof renderSelection==="function")renderSelection();}catch(err){}
+    closeManager();
+  }
+  function intercept(e){
+    const t=e.target.closest?.("#manageSelectionMethodology,#selectionConfigOverlay .close,#selectionConfigOverlay [data-close='selectionConfigOverlay'],#saveSelectionMethodology,#addSelectionCriterion,#addSelectionFlag,[data-hard-up],[data-hard-down],[data-hard-delete],[data-hard-flag-delete]");
+    if(!t)return;
+    if(t.id==="manageSelectionMethodology"){openManager(e);return;}
+    if(t.id==="saveSelectionMethodology"){saveManager(e);return;}
+    if(t.id==="addSelectionCriterion"){
+      e.preventDefault();e.stopImmediatePropagation();
+      const box=document.getElementById("selectionCriteriaManager");if(!box)return;
+      const key="criterion_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),row=document.createElement("div");
+      row.className="selection-manager-row";row.dataset.hardCriterion="";row.dataset.key=key;
+      row.innerHTML="<div class='selection-manager-order'><button type='button' class='btn selection-manager-mini' data-hard-up>↑</button><button type='button' class='btn selection-manager-mini' data-hard-down>↓</button></div><div class='field'><label>Չափանիշի անվանում</label><input data-hard-label value='Նոր չափանիշ'></div><div class='field'><label>Քաշ / %</label><input data-hard-weight type='number' min='0' max='100' step='1' value='0'></div><button type='button' class='btn selection-manager-delete' data-hard-delete>ՋՆՋԵԼ</button>";
+      box.appendChild(row);row.querySelector("[data-hard-label]")?.focus();updateTotal();return;
+    }
+    if(t.id==="addSelectionFlag"){
+      e.preventDefault();e.stopImmediatePropagation();
+      const box=document.getElementById("selectionFlagsManager");if(!box)return;
+      const key="flag_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),row=document.createElement("div");
+      row.className="selection-manager-row flag-row";row.dataset.hardFlag="";row.dataset.key=key;
+      row.innerHTML="<div class='field'><label>Կատեգորիայի անվանում</label><input data-hard-flag-label value='Նոր կատեգորիա'></div><label class='selection-target-check'><input type='checkbox' data-hard-target> Օգտագործել ավտոմատ ընտրության ներկայացուցչականության մեջ</label><button type='button' class='btn selection-manager-delete' data-hard-flag-delete>ՋՆՋԵԼ</button>";
+      box.appendChild(row);row.querySelector("[data-hard-flag-label]")?.focus();return;
+    }
+    if(t.matches("[data-hard-up]")||t.matches("[data-hard-down]")){
+      e.preventDefault();e.stopImmediatePropagation();
+      const row=t.closest("[data-hard-criterion]");if(!row)return;
+      const sibling=t.matches("[data-hard-up]")?row.previousElementSibling:row.nextElementSibling;
+      if(sibling&&sibling.matches("[data-hard-criterion]"))row.parentElement.insertBefore(t.matches("[data-hard-up]")?row:sibling,t.matches("[data-hard-up]")?sibling:row);
+      return;
+    }
+    if(t.matches("[data-hard-delete]")){
+      e.preventDefault();e.stopImmediatePropagation();const rows=document.querySelectorAll("[data-hard-criterion]");if(rows.length<=1){alert("Պետք է մնա առնվազն մեկ չափանիշ։");return;}if(confirm("Ջնջե՞լ այս չափանիշը։")){t.closest("[data-hard-criterion]")?.remove();updateTotal();}return;
+    }
+    if(t.matches("[data-hard-flag-delete]")){
+      e.preventDefault();e.stopImmediatePropagation();if(confirm("Ջնջե՞լ այս կատեգորիան։"))t.closest("[data-hard-flag]")?.remove();return;
+    }
+    if(t.matches(".close")||t.hasAttribute("data-close")){closeManager(e);return;}
+  }
+  document.addEventListener("click",intercept,true);
+  document.addEventListener("input",e=>{if(e.target.matches("[data-hard-weight]"))updateTotal();},true);
+})();
+</script>
 </body>
 </html>
