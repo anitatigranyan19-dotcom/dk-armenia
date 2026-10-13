@@ -1747,7 +1747,7 @@ async function syncDirtyArchiveToCloud(){
   }
 }
 function persist(){
-  dkSaveArchiveSafe(db,false).catch(e=>console.warn("Safe local archive save failed:",e));
+  dkSaveArchiveSafe(db,false,false).catch(e=>console.warn("Safe local archive save failed:",e));
   render();renderDiscoveries();renderResearchDashboard();renderAnalysis();renderTimeline();renderCases();renderResearchLog();renderArticle();renderCompareBar();
   scheduleCloudSync();
 }
@@ -2369,11 +2369,11 @@ async function saveEdit(){
   const saveButton=document.getElementById("saveBtn");
   const oldSaveText=saveButton?saveButton.textContent:"";
   if(saveButton){saveButton.disabled=true;saveButton.textContent="SAVING…";}
-  let localSaved=false;
+  let localSaved=false,cloudSaved=false;
   try{
-    // LOCAL SAVE FIRST — full archive goes to IndexedDB; localStorage keeps only a compact copy.
+    // LOCAL SAVE FIRST — require the full IndexedDB archive, not just the compact localStorage index.
     const localResult=await dkSaveArchiveSafe(db,true);
-    localSaved=!!localResult.ok;
+    localSaved=!!localResult.ok&&!!localResult.indexedOk;
     if(!localResult.ok)console.warn("Local archive could not be saved safely:",localResult.error||localResult);
   }catch(err){
     console.error("Safe local passport save failed:",err);
@@ -2393,7 +2393,7 @@ async function saveEdit(){
       if(cloudReady){
         const cloudResult=await syncBuildingToCloud(db[savedIndex],true);
         if(!cloudResult.ok) console.warn("Cloud save failed; local copy kept.",cloudResult.error||cloudResult.reason);
-        else clearArchiveDirty(db[savedIndex]?.id);
+        else {cloudSaved=true;clearArchiveDirty(db[savedIndex]?.id);}
       }
     }catch(cloudError){
       console.error("Cloud sync failed; local passport is safe.",cloudError);
@@ -2401,9 +2401,15 @@ async function saveEdit(){
     }
   }
 
+  if(!localSaved&&!cloudSaved){
+    showCloudStatus("SAVE NOT CONFIRMED");
+    alert("SAVE NOT CONFIRMED. Your full local archive and cloud copy were not confirmed. Keep this editor open and try again after checking your connection.");
+    if(saveButton){saveButton.disabled=false;saveButton.textContent=oldSaveText||"SAVE ALL CHANGES";}
+    return;
+  }
   close("editorOverlay");
   if(wasObject)details(savedIndex);
-  if(localSaved)showCloudStatus(adminUser&&cloudReady?"CLOUD SAVED · LOCAL COPY SAFE":"LOCAL SAVED · CLOUD PENDING");
+  if(localSaved)showCloudStatus(adminUser&&cloudReady&&cloudSaved?"CLOUD SAVED · LOCAL COPY SAFE":localSaved?"LOCAL SAVED · CLOUD PENDING":"CLOUD SAVED");
   if(saveButton){saveButton.disabled=false;saveButton.textContent=oldSaveText||"SAVE ALL CHANGES";}
 }
 function f(id){return document.getElementById("f_"+id).value.trim();}
@@ -3703,13 +3709,15 @@ try {
 
   function safeWorkspaceSave(){
     try{
-      if(typeof persistWorkspace==="function") persistWorkspace();
       if(typeof settings!=="undefined") localStorage.setItem("dk_settings_v9",JSON.stringify(settings));
       if(typeof db!=="undefined"&&Array.isArray(db)&&typeof dkSaveArchiveSafe==="function"){
         dkSaveArchiveSafe(db,false,false).catch(e=>console.warn("Workspace archive save failed:",e));
       }
       if(typeof routeIds!=="undefined") localStorage.setItem("dk_route_v10",JSON.stringify(routeIds));
-      setStatus("SAVED");
+      if(typeof sitePages!=="undefined" || typeof caseIds!=="undefined" || typeof researchLog!=="undefined" || typeof articleBlocks!=="undefined" || typeof discoveries!=="undefined"){
+        localStorage.setItem("dk_workspace_v10",JSON.stringify({sitePages,caseIds,researchLog,articleBlocks,discoveries}));
+      }
+      setStatus("LOCAL SAVED");
     }catch(e){ console.error("Workspace save failed",e); }
   }
 
