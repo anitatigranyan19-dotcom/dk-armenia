@@ -1978,12 +1978,22 @@ async function loadCloud(){
       // Merge only the recovered fields from the repaired cloud records so
       // any unrelated local edits remain intact.
       const recoveredIds=new Set(["25","26","27","29","36","42","48"]);
-      const cloudFixRows=await loadCloudPhotos(cloudRows.filter(x=>recoveredIds.has(String(x.id))));
+      const cloudRowsWithPhotos=await loadCloudPhotos(cloudRows);
+      const cloudPhotoById=new Map(cloudRowsWithPhotos.filter(x=>Array.isArray(x.photos)&&x.photos.length).map(x=>[String(x.id),x]));
+      const cloudFixRows=cloudRowsWithPhotos.filter(x=>recoveredIds.has(String(x.id)));
       const cloudFixById=new Map(cloudFixRows.map(x=>[String(x.id),x]));
       const localDirty=new Set(getDirtyArchiveIds());
       let recoveryApplied=false;
       local.forEach(b=>{
         const id=String(b.id??b.no??"");
+        // Restore cloud-backed photos for every object without replacing its other passport fields.
+        const cloudPhoto=cloudPhotoById.get(id);
+        if(cloudPhoto){
+          const localPhotos=Array.isArray(b.photos)?b.photos:[];
+          const unsyncedLocalPhotos=localPhotos.filter(u=>typeof u==="string"&&u.startsWith("data:"));
+          b.photos=[...cloudPhoto.photos,...unsyncedLocalPhotos];
+          b.photo_categories=[...(cloudPhoto.photo_categories||[]),...unsyncedLocalPhotos.map(()=> "EXTERIOR")];
+        }
         if(!recoveredIds.has(id))return;
         const c=cloudFixById.get(id);
         if(!c)return;
