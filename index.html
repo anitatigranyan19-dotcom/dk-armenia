@@ -1570,7 +1570,7 @@ function dkCompactArchive(list){return(Array.isArray(list)?list:[]).map(x=>{cons
 function dkOpenLocalDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error("IndexedDB unavailable"));const req=indexedDB.open(DK_LOCAL_IDB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(DK_LOCAL_STORE))req.result.createObjectStore(DK_LOCAL_STORE,{keyPath:"id"});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB open failed"));});}
 async function dkSaveFullArchive(list){const dbi=await dkOpenLocalDB();await new Promise((resolve,reject)=>{const tx=dbi.transaction(DK_LOCAL_STORE,"readwrite"),store=tx.objectStore(DK_LOCAL_STORE);store.put({id:"current",db:Array.isArray(list)?list:[],savedAt:new Date().toISOString()});tx.oncomplete=()=>{dbi.close();resolve();};tx.onerror=()=>{dbi.close();reject(tx.error||new Error("IndexedDB save failed"));};tx.onabort=()=>{dbi.close();reject(tx.error||new Error("IndexedDB save aborted"));};});}
 async function dkLoadFullArchive(){try{const dbi=await dkOpenLocalDB();return await new Promise((resolve,reject)=>{const tx=dbi.transaction(DK_LOCAL_STORE,"readonly"),req=tx.objectStore(DK_LOCAL_STORE).get("current");req.onsuccess=()=>{dbi.close();resolve(req.result&&Array.isArray(req.result.db)?req.result.db:null)};req.onerror=()=>{dbi.close();reject(req.error||new Error("IndexedDB read failed"));};});}catch(e){return null;}}
-async function dkSaveArchiveSafe(list,backup=true){let indexedOk=false;try{await dkSaveFullArchive(list);indexedOk=true;}catch(e){console.warn("IndexedDB archive save failed:",e);}const compact=JSON.stringify(dkCompactArchive(list));try{localStorage.removeItem("dk_archive_v9");if(backup)localStorage.removeItem("dk_passport_backup_v2");localStorage.setItem("dk_archive_v9",compact);if(backup)localStorage.setItem("dk_passport_backup_v2",compact);localStorage.setItem("dk_archive_dirty_v1","1");localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());return{ok:true,indexedOk};}catch(e){try{localStorage.removeItem("dk_archive_v9");localStorage.removeItem("dk_passport_backup_v2");localStorage.setItem("dk_archive_v9",JSON.stringify(dkCompactArchive(list).map(x=>{delete x.notes;return x;})));localStorage.setItem("dk_archive_dirty_v1","1");return{ok:true,indexedOk,fallback:true};}catch(e2){return{ok:indexedOk,indexedOk,error:e2};}}}
+async function dkSaveArchiveSafe(list,backup=true,markDirty=true){let indexedOk=false;try{await dkSaveFullArchive(list);indexedOk=true;}catch(e){console.warn("IndexedDB archive save failed:",e);}const compact=JSON.stringify(dkCompactArchive(list));try{localStorage.removeItem("dk_archive_v9");if(backup)localStorage.removeItem("dk_passport_backup_v2");localStorage.setItem("dk_archive_v9",compact);if(backup)localStorage.setItem("dk_passport_backup_v2",compact);if(markDirty)localStorage.setItem("dk_archive_dirty_v1","1");localStorage.setItem("dk_archive_saved_at_v1",new Date().toISOString());return{ok:true,indexedOk};}catch(e){try{localStorage.removeItem("dk_archive_v9");localStorage.removeItem("dk_passport_backup_v2");localStorage.setItem("dk_archive_v9",JSON.stringify(dkCompactArchive(list).map(x=>{delete x.notes;return x;})));if(markDirty)localStorage.setItem("dk_archive_dirty_v1","1");return{ok:true,indexedOk,fallback:true};}catch(e2){return{ok:indexedOk,indexedOk,error:e2};}}}
 async function dkLoadArchiveSafe(){let compact=null;try{compact=JSON.parse(localStorage.getItem("dk_archive_v9")||"null");}catch(e){}const full=await dkLoadFullArchive();if(Array.isArray(full)&&full.length){if(!Array.isArray(compact)||compact.length!==full.length)return full;const byId=new Map(full.map(x=>[String(x.id??x.no??""),x]));return compact.map(x=>{const f=byId.get(String(x.id??x.no??""));return f?{...f,...x,photos:Array.isArray(f.photos)?f.photos:(Array.isArray(x.photos)?x.photos:[])}:x;});}return Array.isArray(compact)?compact:null;}
 
 let settings={style:"standard",zoom:8,marker:"status",icon:"pin",view:"grid",theme:"paper",accent:"#171717",title:"CULTURAL HOUSES OF ARMENIA",logo:"DK / ARMENIA",
@@ -1879,7 +1879,7 @@ async function syncAllToCloud(){
     const seqResult=await supabaseClient.rpc("repair_buildings_sequence");
     if(seqResult.error)throw seqResult.error;
     cloudKnownIds=new Set(db.filter(x=>x.id).map(x=>Number(x.id)));
-    await dkSaveArchiveSafe(db,false);
+    await dkSaveArchiveSafe(db,false,false);
     localStorage.removeItem("dk_archive_dirty_v1");
     localStorage.removeItem(DK_DIRTY_IDS_KEY);
     localStorage.setItem("dk_last_archive_cloud_save_v1",new Date().toISOString());
@@ -1974,6 +1974,52 @@ async function loadCloud(){
   if(localArchiveDirty && dirtyArchiveIds.length){
     const local=await dkLoadArchiveSafe();
     if(Array.isArray(local) && local.length){
+      // These seven objects were accidentally reverted in a recorded batch.
+      // Merge only the recovered fields from the repaired cloud records so
+      // any unrelated local edits remain intact.
+      const recoveredIds=new Set(["25","26","27","29","36","42","48"]);
+      const cloudFixRows=await loadCloudPhotos(cloudRows.filter(x=>recoveredIds.has(String(x.id))));
+      const cloudFixById=new Map(cloudFixRows.map(x=>[String(x.id),x]));
+      const localDirty=new Set(getDirtyArchiveIds());
+      let recoveryApplied=false;
+      local.forEach(b=>{
+        const id=String(b.id??b.no??"");
+        if(!recoveredIds.has(id))return;
+        const c=cloudFixById.get(id);
+        if(!c)return;
+        b.visit_status=c.visit_status;
+        b.visit_date=c.visit_date||"";
+        b.maps=c.maps||b.maps||"";
+        if(id==="36" && c.architect)b.architect=c.architect;
+        // Fill data that was erased; keep any newer non-empty local research.
+        const supplement=["usage","history","composition","materials","structure","facade_features","changes","fieldwork","discoveries","proposal","sources","ownership","score_structure","score_facade","score_interior","score_function","score_site","selection","passportFields"];
+        b.extra_data={...(b.extra_data||{})};
+        supplement.forEach(k=>{
+          const oldValue=b.extra_data[k],cloudValue=c.extra_data?.[k] ?? c[k];
+          const oldEmpty=oldValue==null || oldValue==="" || (Array.isArray(oldValue)&&oldValue.length===0);
+          const cloudFilled=cloudValue!=null && cloudValue!=="" && !(Array.isArray(cloudValue)&&cloudValue.length===0);
+          if(oldEmpty&&cloudFilled)b.extra_data[k]=cloudValue;
+          if((b[k]==null||b[k]==="")&&cloudValue!=null&&cloudValue!=="")b[k]=cloudValue;
+        });
+        if(Array.isArray(c.photos)&&c.photos.length){b.photos=c.photos;b.photo_categories=c.photo_categories||b.photo_categories||[];}
+        localDirty.delete(id);
+        recoveryApplied=true;
+      });
+      if(recoveryApplied){
+        db=local;
+        if(localDirty.size){
+          localStorage.setItem(DK_DIRTY_IDS_KEY,JSON.stringify([...localDirty]));
+          localStorage.setItem("dk_archive_dirty_v1","1");
+        }else{
+          localStorage.removeItem(DK_DIRTY_IDS_KEY);
+          localStorage.removeItem("dk_archive_dirty_v1");
+        }
+        await dkSaveArchiveSafe(db,false,false);
+        cloudReady=true;
+        showCloudStatus(localDirty.size?"LOCAL CHANGES · CLOUD SYNC PENDING":"CLOUD · "+db.length+" OBJECTS");
+        render();
+        return;
+      }
       db=local;
       cloudReady=true;
       showCloudStatus("LOCAL CHANGES · CLOUD SYNC PENDING");
@@ -3722,7 +3768,7 @@ try {
   function saveLocalSnapshot(){
     try{
       if(typeof db!=="undefined" && Array.isArray(db)){
-        dkSaveArchiveSafe(db,false).catch(e=>console.warn("Autosave archive failed:",e));
+        dkSaveArchiveSafe(db,false,false).catch(e=>console.warn("Autosave archive failed:",e));
       }
       if(typeof settings!=="undefined"){
         localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
