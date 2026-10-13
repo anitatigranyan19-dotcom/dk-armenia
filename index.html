@@ -1733,7 +1733,7 @@ async function syncDirtyArchiveToCloud(){
     for(const building of db){
       const id=building?.id;
       if((id!=null&&pending.has(String(id))) || (pending.has("__new__")&&(!id||Number(id)<=0))){
-        const result=await syncBuildingToCloud(building,true);
+        const result=await syncBuildingToCloud(building,false);
         if(!result.ok)throw result.error||new Error(result.reason||"Cloud sync failed");
         clearArchiveDirty(building.id);
         pending.delete(String(building.id||""));
@@ -1900,7 +1900,7 @@ async function syncBuildingPhotos(building){
     window.editPhotoItems=finalItems.map(p=>({url:p.url,category:p.category,caption:p.caption}));
     window.editPhotoRemovedUrls=[];
     window.editPhotoItemsChanged=false;
-    return {ok:true,count:finalItems.length,items:finalItems};
+    return {ok:true,count:finalItems.length,items:finalItems,explicitlyCleared:finalItems.length===0&&removedUrls.size>0};
   }catch(err){
     console.error("Supabase photo archive error",err);
     // Even on failure, keep old metadata and old Storage files intact.
