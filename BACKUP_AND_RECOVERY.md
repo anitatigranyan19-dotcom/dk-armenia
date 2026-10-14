@@ -4,6 +4,7 @@
 
 - A full baseline checkpoint was created on 2026-10-14 before the recovery changes.
 - The database now creates a scheduled operational snapshot every day at **02:15 UTC** (06:15 Armenia time).
+- Backup listing, snapshot creation, sequence repair, and database restore are restricted to the registered archive administrator. The current existing Auth account is registered; no credentials were changed.
 - The 30 newest snapshots with the `scheduled-daily:` label are retained. Manual and pre-restore checkpoints are not removed by that retention rule.
 - Operational snapshots include buildings, photo records, settings, visits, sources, tags, building-tag relations, fieldwork reports, row counts, and a manifest of Storage objects.
 - The existing history tables remain in place and continue recording changes. Their full contents are included in the one-time baseline checkpoint, but not duplicated into every daily snapshot to avoid uncontrolled database growth.
@@ -19,7 +20,7 @@ The authenticated RPC `restore_archive_recovery_snapshot(p_snapshot_id, p_confir
 
 1. Confirm the exact snapshot ID and its counts.
 2. Before restoration, download the current browser JSON backup too.
-3. The confirmation argument must exactly match `RESTORE DK ARMENIA <snapshot_id>`.
+3. The confirmation argument must exactly match `RESTORE DK ARMENIA <snapshot_id>`. The function checks the registered archive-administrator record before proceeding.
 4. The restore routine creates a pre-restore safety checkpoint inside the same transaction.
 5. It restores the operational records and aligns identity sequences. The operation is transactional: an error rolls back the data changes.
 6. History tables are retained, so they continue to show the restore activity rather than being overwritten with an older history log.
