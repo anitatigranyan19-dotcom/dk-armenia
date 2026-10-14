@@ -2867,6 +2867,14 @@ document.addEventListener("click",e=>{
 <button class="btn" id="restoreBackupBtn" type="button">RESTORE BACKUP…</button><button class="btn" id="recoverLocalBtn" type="button" style="margin-left:8px">RECOVER THIS BROWSER</button>
 <div class="small" id="backupRestoreStatus" style="margin-top:10px"></div>
 </div>
+<div style="border-top:1px solid var(--line);margin-top:20px;padding-top:18px">
+  <div class="small" style="margin-bottom:8px">DATABASE SNAPSHOTS / SUPABASE</div>
+  <div class="small" style="line-height:1.6;margin-bottom:12px">Automatic daily snapshots keep the latest 30 copies of the archive records. Database restore does not recreate image files that were deleted from Storage.</div>
+  <button class="btn dark" id="createDatabaseSnapshotBtn" type="button">CREATE DATABASE SNAPSHOT NOW</button>
+  <button class="btn" id="refreshDatabaseSnapshotsBtn" type="button" style="margin-left:6px">REFRESH LIST</button>
+  <div class="small" id="databaseSnapshotStatus" style="margin-top:10px">Sign in to Admin to view or manage database snapshots.</div>
+  <div id="databaseSnapshotList" style="margin-top:12px;display:grid;gap:8px"></div>
+</div>
 <div class="small" style="margin-top:18px">
       The backup contains the catalog data, site settings and workspace data available in this browser.
       Uploaded files in Supabase Storage are not embedded; their URLs are preserved.
@@ -2924,11 +2932,85 @@ document.addEventListener("click",function(e){
   document.querySelectorAll(".chart-research").forEach(el=>el.hidden=group!=="research");
 });
 
+async function loadDatabaseSnapshots(){
+  const status=document.getElementById("databaseSnapshotStatus");
+  const list=document.getElementById("databaseSnapshotList");
+  if(!status||!list)return;
+  if(!adminUser){
+    status.textContent="Sign in to Admin to view or manage database snapshots.";
+    list.innerHTML="";
+    return;
+  }
+  status.textContent="Loading database snapshots…";
+  list.innerHTML="";
+  try{
+    const {data,error}=await supabaseClient.rpc("list_archive_recovery_snapshots");
+    if(error)throw error;
+    const rows=Array.isArray(data)?data:[];
+    if(!rows.length){
+      status.textContent="No database snapshots found yet.";
+      return;
+    }
+    status.textContent=rows.length+" database snapshots found. Automatic snapshots retain up to 30 daily copies.";
+    list.innerHTML=rows.map(s=>{
+      const c=s.row_counts||{};
+      const summary=(c.buildings??0)+" buildings · "+(c.photos??0)+" photo records · "+(c.settings??0)+" settings";
+      const badge=s.restorable?"RESTORE READY":"LEGACY / NOT RESTORABLE";
+      return "<div style='border:1px solid var(--line);padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap'>"+
+        "<div style='min-width:220px;flex:1'><div style='font-size:11px;font-weight:700'>"+esc(s.label||("Snapshot "+s.snapshot_id))+"</div>"+
+        "<div class='small' style='margin-top:5px'>#"+esc(s.snapshot_id)+" · "+esc(s.created_at||"")+"</div>"+
+        "<div class='small' style='margin-top:4px'>"+esc(summary)+"</div></div>"+
+        "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap'><span class='small'>"+badge+"</span>"+
+        "<button class='btn' type='button' data-db-restore='"+Number(s.snapshot_id)+"' "+(s.restorable?"":"disabled")+">RESTORE…</button></div></div>";
+    }).join("");
+    list.querySelectorAll("[data-db-restore]").forEach(button=>button.onclick=async()=>{
+      const id=Number(button.dataset.dbRestore);
+      if(!Number.isSafeInteger(id)||id<=0)return;
+      if(!confirm("Restore database records from snapshot #"+id+"? Current database records will be replaced. A safety snapshot is created first. Existing Storage files are not recreated if already deleted."))return;
+      const expected="RESTORE DK ARMENIA "+id;
+      const typed=prompt("Type this exact phrase to continue:\n"+expected);
+      if(typed!==expected){status.textContent="Restore cancelled. Confirmation did not match.";return;}
+      button.disabled=true;status.textContent="Restoring database snapshot #"+id+"…";
+      try{
+        const {data:restoreResult,error:restoreError}=await supabaseClient.rpc("restore_archive_recovery_snapshot",{p_snapshot_id:id,p_confirmation:typed});
+        if(restoreError)throw restoreError;
+        status.textContent="Database records restored from #"+id+". Storage file binaries were not restored.";
+        alert("Database records restored. The page will reload. If any Storage images were deleted, they still need a separate file backup.");
+        location.reload();
+      }catch(err){
+        console.error("Database snapshot restore failed",err);
+        status.textContent="Restore failed; database transaction should have rolled back. "+(err?.message||String(err));
+        button.disabled=false;
+      }
+    });
+  }catch(err){
+    console.error("Database snapshot list failed",err);
+    status.textContent="Could not load database snapshots. "+(err?.message||String(err));
+  }
+}
 document.addEventListener("DOMContentLoaded",()=>{
   const b=document.getElementById("backupBtn");
   if(b)b.onclick=()=>{
     if(typeof show==="function")show("backupOverlay");
+    loadDatabaseSnapshots();
   };
+  const create=document.getElementById("createDatabaseSnapshotBtn");
+  if(create)create.onclick=async()=>{
+    const status=document.getElementById("databaseSnapshotStatus");
+    if(!adminUser){if(status)status.textContent="Sign in to Admin first.";return;}
+    create.disabled=true;if(status)status.textContent="Creating a database snapshot…";
+    try{
+      const {data,error}=await supabaseClient.rpc("create_archive_recovery_snapshot",{p_reason:"manual-from-backup-panel"});
+      if(error)throw error;
+      if(status)status.textContent="Database snapshot created (#"+data+").";
+      await loadDatabaseSnapshots();
+    }catch(err){
+      console.error("Manual database snapshot failed",err);
+      if(status)status.textContent="Snapshot failed. "+(err?.message||String(err));
+    }finally{create.disabled=false;}
+  };
+  const refresh=document.getElementById("refreshDatabaseSnapshotsBtn");
+  if(refresh)refresh.onclick=loadDatabaseSnapshots;
   const j=document.getElementById("backupJsonBtn");
   if(j)j.onclick=()=>{
     const stamp=new Date().toISOString().slice(0,10);
