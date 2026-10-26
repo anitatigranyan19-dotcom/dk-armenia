@@ -2067,7 +2067,7 @@ async function loadCloud(){
   if(error){
     console.error(error);
     cloudReady=false;
-    db=await dkLoadArchiveSafe()||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));
+    db=await dkLoadArchiveSafe()||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));window.db=db;
     showCloudStatus("OFFLINE / LOCAL");
     render();
     return;
@@ -2120,7 +2120,7 @@ async function loadCloud(){
         recoveryApplied=true;
       });
       if(recoveryApplied){
-        db=local;
+        db=local;window.db=db;
         if(localDirty.size){
           localStorage.setItem(DK_DIRTY_IDS_KEY,JSON.stringify([...localDirty]));
           localStorage.setItem("dk_archive_dirty_v1","1");
@@ -2134,7 +2134,7 @@ async function loadCloud(){
         render();
         return;
       }
-      db=local;
+      db=local;window.db=db;
       cloudReady=true;
       showCloudStatus("LOCAL CHANGES · CLOUD SYNC PENDING");
       render();
@@ -2143,7 +2143,7 @@ async function loadCloud(){
   }
   if(cloudRows.length){
     cloudRows=await loadCloudPhotos(cloudRows);
-    db=cloudRows;
+    db=cloudRows;window.db=db;
     cloudKnownIds=new Set(db.map(x=>Number(x.id)).filter(Boolean));
     await dkSaveArchiveSafe(db,false);
     localStorage.removeItem("dk_archive_dirty_v1");
@@ -2152,7 +2152,7 @@ async function loadCloud(){
     showCloudStatus("CLOUD · "+db.length+" OBJECTS");
   }else{
     cloudReady=false;
-    db=await dkLoadArchiveSafe()||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));
+    db=await dkLoadArchiveSafe()||INITIAL_DATA.map((x,i)=>({...x,id:x.id||i+1,photos:x.photos||[],source:x.source||"",updated:x.updated||""}));window.db=db;
     showCloudStatus("CLOUD EMPTY / LOCAL 96");
   }
   render();
@@ -3009,11 +3009,12 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(setupPassportTabs,40
   let routedKm=null, routedSeconds=null, routeRequestId=0;
   const saveStore=()=>localStorage.setItem('dk_routes_v1',JSON.stringify(routes));
   const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-  const byId=id=>(window.db||db).find(x=>String(x.id)===String(id)||String(x.no)===String(id));
+  const archiveData=()=>Array.isArray(db)?db:(Array.isArray(window.db)?window.db:[]);
+  const byId=id=>archiveData().find(x=>String(x.id)===String(id)||String(x.no)===String(id));
   const photo=x=>{const p=(x.photos&&x.photos[0])||x._photo;return p?`<img src="${esc(p)}" alt="">`:'<div class="route-building-ph"></div>'};
   const hav=(a,b)=>{const R=6371,rad=v=>v*Math.PI/180;const dLat=rad(+b.lat-(+a.lat)),dLon=rad(+b.lng-(+a.lng));const A=Math.sin(dLat/2)**2+Math.cos(rad(+a.lat))*Math.cos(rad(+b.lat))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(A));};
   const ncoord=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:null};
-  function coordsFromMap(x){const raw=String(x?.maps||x?.google_maps_url||'');let m=raw.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)||raw.match(/[?&](?:q|query|ll)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);return m?{lat:+m[1],lng:+m[2]}:null;}
+  function coordsFromMap(x){const raw=String(x?.maps||x?.google_maps_url||x?.map_url||'').trim();if(!raw)return null;const decoded=(()=>{try{return decodeURIComponent(raw.replace(/\+/g,'%20'))}catch(e){return raw}})();const patterns=[/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/i,/[?&](?:q|query|ll|center|destination)=(-?\d+(?:\.\d+)?)(?:%2C|,|%2c|\s)+(-?\d+(?:\.\d+)?)/i,/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/i,/!2d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)/i];for(let i=0;i<patterns.length;i++){const m=decoded.match(patterns[i]);if(!m)continue;const lat=i===3?+m[2]:+m[1],lng=i===3?+m[1]:+m[2];if(Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180&&!(lat===0&&lng===0))return{lat,lng};}return null;}
   function pointOf(x){if(!x)return null;const lat=ncoord(x.lat??x.latitude),lng=ncoord(x.lng??x.longitude??x.lon);if(lat!==null&&lng!==null&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180&&!(lat===0&&lng===0))return {...x,lat,lng};const m=coordsFromMap(x);return m?{...x,...m}:null;}
   const routePoints=()=>draft.stops.map(byId).map(pointOf).filter(Boolean);
   const missingRoutePoints=()=>draft.stops.map(byId).filter(Boolean).filter(x=>!pointOf(x));
@@ -3067,7 +3068,7 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(setupPassportTabs,40
   }
   function setDraft(r){routedKm=null;routedSeconds=null;draft=r?{id:r.id,name:r.name||'',description:r.description||'',stops:[...(r.stops||[])]}:{id:null,name:'',description:'',stops:[]};selectedId=draft.id||null;renderRoutes();}
   function renderSaved(){const box=document.getElementById('savedRoutes');if(!box)return;document.getElementById('routesCount').textContent=`${routes.length} SAVED ROUTE${routes.length===1?'':'S'}`;document.getElementById('routesCountSmall').textContent=String(routes.length).padStart(2,'0');if(!routes.length){box.innerHTML='<div class="route-empty">No saved routes yet. Create your first architectural journey.</div>';return;}box.innerHTML=routes.map((r,i)=>{const first=(r.stops||[]).map(byId).find(Boolean);const img=first&&((first.photos&&first.photos[0])||first._photo);const meta=`${(r.stops||[]).length} STOPS · ${r.distance||'—'} · ${r.duration||'—'}`;return `<div class="saved-route ${selectedId===r.id?'active':''}" data-open-route="${r.id}">${img?`<img class="saved-route-thumb" src="${esc(img)}">`:'<div class="saved-route-thumb"></div>'}<div><div class="saved-route-title">${String(i+1).padStart(2,'0')} · ${esc(r.name||'UNTITLED ROUTE')}</div><div class="saved-route-meta">${meta}</div>${r.description?`<div class="saved-route-desc">${esc(r.description)}</div>`:''}<button class="saved-route-open" data-open-route="${r.id}">OPEN ROUTE →</button></div><button class="route-menu" data-delete-route="${r.id}" title="Delete">×</button></div>`}).join('');box.querySelectorAll('[data-open-route]').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-delete-route]'))return;setDraft(routes.find(r=>r.id===el.dataset.openRoute));document.getElementById('routes').scrollIntoView({behavior:'smooth'});});box.querySelectorAll('[data-delete-route]').forEach(b=>b.onclick=e=>{e.stopPropagation();if(confirm('Delete this route?')){routes=routes.filter(r=>r.id!==b.dataset.deleteRoute);saveStore();setDraft(null);}});}
-  function renderBuildings(){const box=document.getElementById('routeBuildingList');if(!box)return;const q=(document.getElementById('routeBuildingSearch').value||'').toLowerCase();const data=(window.db||db).filter(x=>!draft.stops.map(String).includes(String(x.id||x.no))).filter(x=>!q||[x.name,x.region,x.settlement,x.community].join(' ').toLowerCase().includes(q)).slice(0,60);box.innerHTML=data.length?data.map(x=>`<div class="route-building">${photo(x)}<div><div class="route-building-name">${esc(x.name)}</div><div class="route-building-meta">${esc(x.region||'')} · ${esc(x.settlement||'')}</div></div><button class="route-add" data-add-stop="${esc(x.id||x.no)}">＋</button></div>`).join(''):'<div class="route-empty">No more matching cultural houses.</div>';box.querySelectorAll('[data-add-stop]').forEach(b=>b.onclick=()=>{draft.stops.push(String(b.dataset.addStop));routedKm=null;routedSeconds=null;renderRoutes();});}
+  function renderBuildings(){const box=document.getElementById('routeBuildingList');if(!box)return;const q=(document.getElementById('routeBuildingSearch').value||'').toLowerCase();const data=archiveData().filter(x=>!draft.stops.map(String).includes(String(x.id??x.no))).filter(x=>!q||[x.name,x.region,x.settlement,x.community].join(' ').toLowerCase().includes(q)).slice(0,60);box.innerHTML=data.length?data.map(x=>`<div class="route-building">${photo(x)}<div><div class="route-building-name">${esc(x.name)}</div><div class="route-building-meta">${esc(x.region||'')} · ${esc(x.settlement||'')}</div></div><button class="route-add" data-add-stop="${esc(x.id||x.no)}">＋</button></div>`).join(''):'<div class="route-empty">No more matching cultural houses.</div>';box.querySelectorAll('[data-add-stop]').forEach(b=>b.onclick=()=>{draft.stops.push(String(b.dataset.addStop));routedKm=null;routedSeconds=null;renderRoutes();});}
   function renderStops(){const box=document.getElementById('routeStops'),mini=document.getElementById('routeDetailStops');if(!box||!mini)return;const items=draft.stops.map((id,n)=>({x:byId(id),id,n})).filter(o=>o.x);const html=items.length?items.map(({x,id,n})=>`<div class="route-stop" draggable="true" data-stop-index="${n}"><div class="route-stop-num">${String(n+1).padStart(2,'0')}</div><div><div class="route-stop-name">${esc(x.name)}</div><div class="route-stop-meta">${esc(x.settlement||'')} · ${esc(x.region||'')}</div></div><button class="route-remove" data-remove-stop="${n}">×</button></div>`).join(''):'<div class="route-empty">Add cultural houses from the catalog to build your route.</div>';box.innerHTML=html;mini.innerHTML=items.length?items.map(({x,n})=>`<div class="route-stop-mini"><span>${String(n+1).padStart(2,'0')}</span><span>${esc(x.name)}</span></div>`).join(''):'<div class="route-empty">No stops selected.</div>';box.querySelectorAll('[data-remove-stop]').forEach(b=>b.onclick=()=>{draft.stops.splice(+b.dataset.removeStop,1);routedKm=null;routedSeconds=null;renderRoutes();});let drag=null;box.querySelectorAll('.route-stop').forEach(el=>{el.addEventListener('dragstart',()=>{drag=+el.dataset.stopIndex;el.classList.add('dragging')});el.addEventListener('dragend',()=>el.classList.remove('dragging'));el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const to=+el.dataset.stopIndex;if(drag===null||drag===to)return;const [m]=draft.stops.splice(drag,1);draft.stops.splice(to,0,m);drag=null;routedKm=null;routedSeconds=null;renderRoutes();});});}
   function renderStats(){
     const count=draft.stops.length;
