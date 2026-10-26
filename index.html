@@ -2054,7 +2054,7 @@ function recoverLocalPassportBackup(){
       dkSaveArchiveSafe(backup,true).catch(e=>console.warn("Passport backup migration failed:",e));
       localStorage.setItem("dk_archive_dirty_v1","1");
       localStorage.setItem("dk_passport_recovery_v1",new Date().toISOString());
-      db=backup;
+      db=backup;window.db=db;
       return true;
     }
   }catch(e){console.warn("Local passport recovery failed:",e);}
