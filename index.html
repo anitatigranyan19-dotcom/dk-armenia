@@ -2245,7 +2245,9 @@ async function bootCloud(){
   renderFieldwork();
   renderData();
   await loadCloud();
-  if(adminUser) await saveCloudSettings();
+  // Do not let a successful settings save mask a failed archive load.
+  // Workspace settings may be saved only after the archive connection is ready.
+  if(adminUser && cloudReady) await saveCloudSettings();
   if(window.loadFieldworkReports)await window.loadFieldworkReports();
   if(window.renderFieldwork)window.renderFieldwork();
 }
