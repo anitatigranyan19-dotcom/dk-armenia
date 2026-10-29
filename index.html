@@ -2083,6 +2083,16 @@ async function loadCloud(){
       // any unrelated local edits remain intact.
       const recoveredIds=new Set(["25","26","27","29","36","42","48"]);
       const cloudRowsWithPhotos=await loadCloudPhotos(cloudRows);
+      // A stale local archive may contain fewer objects than the cloud.
+      // Preserve all local edits, but append cloud records missing locally.
+      const localIdsForMerge=new Set(local.map(x=>String(x.id??x.no??"")));
+      cloudRowsWithPhotos.forEach(c=>{
+        const id=String(c.id??c.no??"");
+        if(id && !localIdsForMerge.has(id)){
+          local.push(c);
+          localIdsForMerge.add(id);
+        }
+      });
       const cloudPhotoById=new Map(cloudRowsWithPhotos.filter(x=>Array.isArray(x.photos)&&x.photos.length).map(x=>[String(x.id),x]));
       const cloudFixRows=cloudRowsWithPhotos.filter(x=>recoveredIds.has(String(x.id)));
       const cloudFixById=new Map(cloudFixRows.map(x=>[String(x.id),x]));
