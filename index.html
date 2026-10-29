@@ -2597,11 +2597,20 @@ document.querySelectorAll("#editorSectionNav button[data-editor-target]").forEac
 });
 document.getElementById("pickPassportLocation")?.addEventListener("click",()=>{pendingMapIndex=editing;close("editorOverlay");document.getElementById("map-section").scrollIntoView({behavior:"smooth"});addingPoint=true;document.getElementById("addPointBtn").textContent="CLICK ON MAP…";document.getElementById("map").style.cursor="crosshair";setTimeout(()=>map.invalidateSize(),450);});document.getElementById("openPassportMapLink")?.addEventListener("click",()=>{const url=document.getElementById("f_maps")?.value.trim();if(url)window.open(url,"_blank","noopener");else{const lat=document.getElementById("f_lat")?.value.trim(),lng=document.getElementById("f_lng")?.value.trim();if(lat&&lng)window.open("https://www.google.com/maps?q="+encodeURIComponent(lat+","+lng),"_blank","noopener");else alert("ADD COORDINATES FIRST");}});document.getElementById("saveBtn").onclick=saveEdit;
 document.getElementById("deleteBtn").onclick=async()=>{
-  if(editing>=0&&confirm("Delete this building?")){
-    const id=db[editing]?.id;
-    db.splice(editing,1); persist(); close("editorOverlay");
-    if(cloudReady)await deleteBuildingFromCloud(id);
+  if(!(editing>=0&&confirm("Delete this building?")))return;
+  const id=db[editing]?.id;
+  // A saved cloud object may only be removed after the cloud snapshot + delete both succeed.
+  if(id!=null&&id!==""&&Number(id)>0){
+    if(!cloudReady||!adminUser){
+      alert("Deletion is blocked while the cloud archive is unavailable. Reconnect and try again so a recovery snapshot can be created first.");
+      return;
+    }
+    const deletion=await deleteBuildingFromCloud(id);
+    if(!deletion?.ok)return;
   }
+  db.splice(editing,1);
+  persist();
+  close("editorOverlay");
 };document.getElementById("addBtn").onclick=()=>editor();document.getElementById("search").oninput=()=>{catalogPage=1;render()};document.getElementById("region").onchange=()=>{catalogPage=1;render()};document.getElementById("condition").onchange=()=>{catalogPage=1;render()};document.getElementById("usage").onchange=()=>{catalogPage=1;render()};document.getElementById("catalogSort").onchange=()=>{catalogPage=1;render()};document.getElementById("catalogReset").onclick=()=>{document.getElementById("search").value="";document.getElementById("region").value="";document.getElementById("condition").value="";document.getElementById("usage").value="";document.getElementById("catalogSort").value="default";catalogStatusFilter="";catalogPage=1;document.querySelectorAll(".catalog-chip").forEach(b=>b.classList.toggle("active",!b.dataset.catalogStatus));render()};document.getElementById("catalogMapJump").onclick=()=>document.getElementById("map-section").scrollIntoView({behavior:"smooth"});document.querySelectorAll(".catalog-chip").forEach(b=>b.onclick=()=>{catalogStatusFilter=b.dataset.catalogStatus||"";catalogPage=1;document.querySelectorAll(".catalog-chip").forEach(x=>x.classList.toggle("active",x===b));render()});document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>close(b.dataset.close));
 document.querySelectorAll(".mapfilter").forEach(b=>b.onclick=()=>{document.querySelectorAll(".mapfilter").forEach(z=>z.classList.remove("active"));b.classList.add("active");mapStatus=b.dataset.mapstatus;updateMarkers();});
 document.getElementById("addPointBtn").onclick=()=>{pendingMapIndex=null;addingPoint=!addingPoint;document.getElementById("addPointBtn").textContent=addingPoint?"CLICK ON MAP…":"＋ ADD POINT";document.getElementById("map").style.cursor=addingPoint?"crosshair":"";};
